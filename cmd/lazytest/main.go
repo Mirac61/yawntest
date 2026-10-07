@@ -59,8 +59,10 @@ func runCheck(opts options) {
 	}
 
 	mustReport(report.Untested(os.Stdout, files))
+	mustReport(report.Hints(os.Stdout, files))
 	mustReport(report.ErrorPaths(os.Stdout, errorPaths))
-	if len(files) > 0 || len(errorPaths) > 0 {
+	// Hints are advice and don't fail the check.
+	if scan.HasMatches(files) || len(errorPaths) > 0 {
 		os.Exit(exitProblems)
 	}
 }
@@ -75,7 +77,9 @@ func runGenerate(opts options) {
 
 	var results []report.GeneratedFile
 	for _, file := range files {
-		results = append(results, must(generateFile(file, opts.force)))
+		if len(file.Matches) > 0 {
+			results = append(results, must(generateFile(file, opts.force)))
+		}
 	}
 	mustReport(report.Generated(os.Stdout, results))
 }

@@ -39,6 +39,7 @@ func TestUntested(t *testing.T) {
 				{Path: "b.go", Matches: []detect.Match{
 					{Line: 1, Name: "Check", Pattern: detect.PatternValidation, Reason: "name Check*, returns bool"},
 				}},
+				{Path: "hints-only.go", Hints: []detect.Hint{{Line: 1, Domain: "money"}}},
 			},
 			want: "a.go\n" +
 				"  Task  json-roundtrip  line 3   has json tags\n" +
