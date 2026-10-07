@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/lazytest/internal/scan"
 )
 
 var update = flag.Bool("update", false, "rewrite testdata/*.golden from the current output")
@@ -84,7 +85,7 @@ func generate(t *testing.T, path string) []byte {
 		t.Fatalf("parse fixture: %v", err)
 	}
 
-	out, err := File(file.Name.Name, detect.File(fset, file))
+	out, err := File(file.Name.Name, scan.BuildConstraint(path, file), detect.File(fset, file))
 	if err != nil {
 		t.Fatalf("generate: %v", err)
 	}

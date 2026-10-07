@@ -123,7 +123,7 @@ func generate(opts options) []report.GeneratedFile {
 func generateFile(file scan.File, force bool) (report.GeneratedFile, error) {
 	result := report.GeneratedFile{Source: file.Path, TestPath: gen.TestPath(file.Path)}
 
-	output, err := gen.File(file.Package, file.Matches)
+	output, err := gen.File(file.Package, file.BuildConstraint, file.Matches)
 	if err != nil {
 		return result, fmt.Errorf("generate %s: %w", file.Path, err)
 	}
