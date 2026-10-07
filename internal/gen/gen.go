@@ -20,7 +20,7 @@ type Test struct {
 type Output struct {
 	Code    []byte // nil if no test was generated
 	Tests   []Test
-	Skipped []detect.Match // patterns without a generator yet
+	Skipped []detect.Match // needs inputs lazytest can't build, e.g. constructor dependencies
 }
 
 func TestPath(sourcePath string) string {

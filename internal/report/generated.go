@@ -33,7 +33,7 @@ func Generated(w io.Writer, files []GeneratedFile) error {
 			}
 		}
 		for _, match := range file.Output.Skipped {
-			fmt.Fprintf(table, "  · %s\t%s\tno generator yet\n", match.Name, match.Pattern)
+			fmt.Fprintf(table, "  · %s\t%s\tskipped, needs inputs lazytest can't build\n", match.Name, match.Pattern)
 		}
 
 		skipped += len(file.Output.Skipped)
@@ -46,7 +46,7 @@ func Generated(w io.Writer, files []GeneratedFile) error {
 		return err
 	}
 
-	_, err := fmt.Fprintf(w, "\nWrote %s with %s. %s without a generator yet.\n",
+	_, err := fmt.Fprintf(w, "\nWrote %s with %s, skipped %s.\n",
 		plural(writtenFiles, "file"), plural(writtenTests, "test"), plural(skipped, "candidate"))
 	return err
 }

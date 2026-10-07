@@ -39,8 +39,8 @@ func TestGenerated(t *testing.T) {
 			want: "api/tasks.go\n" +
 				"  ✓ Task        json-roundtrip  1 test\n" +
 				"  ✓ Add         pure-func       fuzz, 5 seeds\n" +
-				"  · CreateTask  http-handler    no generator yet\n" +
-				"\nWrote 1 file with 2 tests. 1 candidate without a generator yet.\n",
+				"  · CreateTask  http-handler    skipped, needs inputs lazytest can't build\n" +
+				"\nWrote 1 file with 2 tests, skipped 1 candidate.\n",
 		},
 		{
 			name: "existing file without --force",
@@ -51,7 +51,7 @@ func TestGenerated(t *testing.T) {
 			}},
 			want: "a.go\n" +
 				"  ! Add  pure-func  a_lazytest_test.go exists, rerun with --force\n" +
-				"\nWrote 0 files with 0 tests. 0 candidates without a generator yet.\n",
+				"\nWrote 0 files with 0 tests, skipped 0 candidates.\n",
 		},
 	}
 
