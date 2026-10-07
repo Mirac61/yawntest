@@ -1,0 +1,61 @@
+package detect
+
+import (
+	"go/ast"
+	"go/token"
+)
+
+type funcDetector func(fn *ast.FuncDecl, imports importTable) (reason string, ok bool)
+
+// First hit wins, so validation beats pure-func.
+var funcDetectors = []struct {
+	pattern Pattern
+	detect  funcDetector
+}{
+	{PatternHTTPHandler, detectHTTPHandler},
+	{PatternValidation, detectValidation},
+	{PatternPureFunc, detectPureFunc},
+}
+
+func File(fset *token.FileSet, file *ast.File) []Match {
+	imports := newImportTable(file)
+
+	var matches []Match
+	for _, decl := range file.Decls {
+		switch decl := decl.(type) {
+		case *ast.FuncDecl:
+			if match, ok := matchFunc(fset, decl, imports); ok {
+				matches = append(matches, match)
+			}
+		case *ast.GenDecl:
+			matches = append(matches, matchJSONStructs(fset, decl)...)
+		}
+	}
+	return matches
+}
+
+func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Match, bool) {
+	// No body: implemented in assembly.
+	if fn.Body == nil {
+		return Match{}, false
+	}
+
+	for _, detector := range funcDetectors {
+		reason, ok := detector.detect(fn, imports)
+		if ok {
+			return newMatch(fset, fn, funcName(fn), detector.pattern, reason), true
+		}
+	}
+	return Match{}, false
+}
+
+func newMatch(fset *token.FileSet, node ast.Node, name string, pattern Pattern, reason string) Match {
+	position := fset.Position(node.Pos())
+	return Match{
+		File:    position.Filename,
+		Line:    position.Line,
+		Name:    name,
+		Pattern: pattern,
+		Reason:  reason,
+	}
+}

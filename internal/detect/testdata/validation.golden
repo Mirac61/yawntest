@@ -1,0 +1,6 @@
+10 ValidateEmail validation: name Validate*, returns error
+17 IsValidAge validation: name IsValid*, returns bool
+19 User.Validate validation: name Validate*, returns error
+21 checkName validation: name Check*, returns bool
+23 IsEmail validation: string param, returns bool
+29 Checkout pure-func: basic params, no I/O
