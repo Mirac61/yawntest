@@ -130,7 +130,7 @@ func (b *builder) fuzzArg(index int, param detect.Field) fuzzArg {
 		b.use("time")
 		fuzzName += "Unix"
 		arg.fuzzType = "int64"
-		arg.seeds = unixSeeds
+		arg.seeds = values(unixCases)
 		value = "time.Unix(" + fuzzName + ", 0).UTC()"
 	} else {
 		arg.seeds = values(b.edgeCases(elemType))

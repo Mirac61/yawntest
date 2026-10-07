@@ -18,8 +18,13 @@ var stringCases = []edgeCase{
 	{Name: "sql injection", Value: `"' OR 1=1 --"`},
 }
 
-// Unix 0, leap day 2024-02-29 12:00 UTC, 9999-12-31 23:59:59 UTC, one second before 1970.
-var unixSeeds = []string{"int64(0)", "int64(1709208000)", "int64(253402300799)", "int64(-1)"}
+// Unix seconds, because Go fuzzing can't take time.Time directly.
+var unixCases = []edgeCase{
+	{Name: "unix 0", Value: "int64(0)"},
+	{Name: "leap day", Value: "int64(1709208000)"},    // 2024-02-29 12:00 UTC
+	{Name: "year 9999", Value: "int64(253402300799)"}, // 9999-12-31 23:59:59 UTC
+	{Name: "before 1970", Value: "int64(-1)"},
+}
 
 var untypedSeeds = map[string][]string{
 	"bool":    {"false", "true"},

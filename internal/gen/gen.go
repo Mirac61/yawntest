@@ -66,6 +66,8 @@ func (b *builder) add(match detect.Match) (summary string, ok bool) {
 		return b.fuzz(match), true
 	case detect.PatternHTTPHandler:
 		return b.httpHandler(match)
+	case detect.PatternValidation:
+		return b.validation(match)
 	default:
 		return "", false
 	}
