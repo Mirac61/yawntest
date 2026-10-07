@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/lazytest/internal/run"
 	"github.com/Mirac61/lazytest/internal/scan"
 )
 
@@ -143,6 +144,20 @@ func KeepChangedFiles(files []scan.File, changed map[string]File) ([]scan.File, 
 	for _, file := range files {
 		if touched[file.Path] {
 			kept = append(kept, file)
+		}
+	}
+	return kept, nil
+}
+
+func KeepChangedErrorPaths(paths []run.ErrorPath, changed map[string]File) ([]run.ErrorPath, error) {
+	var kept []run.ErrorPath
+	for _, path := range paths {
+		fileChanges, err := lookup(changed, path.File)
+		if err != nil {
+			return nil, err
+		}
+		if fileChanges.Touches(path.Line, path.Line) {
+			kept = append(kept, path)
 		}
 	}
 	return kept, nil

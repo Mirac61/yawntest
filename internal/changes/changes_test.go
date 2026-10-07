@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/lazytest/internal/run"
 	"github.com/Mirac61/lazytest/internal/scan"
 )
 
@@ -109,6 +110,18 @@ func TestSinceHEADAndFilters(t *testing.T) {
 	}
 	if got, want := matchNames(byFile), []string{"Add", "Sub", "Mul"}; !slices.Equal(got, want) {
 		t.Errorf("KeepChangedFiles = %v, want %v", got, want)
+	}
+
+	paths := []run.ErrorPath{
+		{File: filepath.Join(repo, "calc.go"), Line: 3},
+		{File: filepath.Join(repo, "calc.go"), Line: 5},
+	}
+	keptPaths, err := KeepChangedErrorPaths(paths, changed)
+	if err != nil {
+		t.Fatalf("filter error paths: %v", err)
+	}
+	if len(keptPaths) != 1 || keptPaths[0].Line != 3 {
+		t.Errorf("KeepChangedErrorPaths = %+v, want only line 3", keptPaths)
 	}
 }
 
