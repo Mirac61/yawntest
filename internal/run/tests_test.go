@@ -16,6 +16,8 @@ func TestParseTestEvents(t *testing.T) {
 {"Action":"output","Test":"TestLazytest_CreateTask_BadInput/invalid_json","Output":"    api_lazytest_test.go:35: status = 500, want < 500 for bad input\n"}
 {"Action":"fail","Test":"TestLazytest_CreateTask_BadInput/invalid_json"}
 {"Action":"fail","Test":"TestLazytest_CreateTask_BadInput"}
+{"Action":"output","Test":"FuzzLazytest_Initial/seed#0","Output":"--- FAIL: FuzzLazytest_Initial/seed#0 (0.00s)\n"}
+{"Action":"fail","Test":"FuzzLazytest_Initial/seed#0"}
 {"Action":"output","Test":"FuzzLazytest_Initial","Output":"panic: runtime error: index out of range [0] with length 0\n"}
 {"Action":"fail","Test":"FuzzLazytest_Initial"}
 {"Action":"pass","Test":"TestLazytest_Task_JSONRoundtrip"}
@@ -37,7 +39,7 @@ func TestParseTestEvents(t *testing.T) {
 			events: events,
 			want: []Finding{
 				{Test: "TestLazytest_CreateTask_BadInput/invalid_json", Message: "status = 500, want < 500 for bad input"},
-				{Test: "FuzzLazytest_Initial", Message: "panic: runtime error: index out of range [0] with length 0"},
+				{Test: "FuzzLazytest_Initial/seed#0", Message: "panic: runtime error: index out of range [0] with length 0"},
 			},
 		},
 		{

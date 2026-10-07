@@ -103,7 +103,7 @@ func parseTestEvents(r io.Reader) ([]Finding, error) {
 		if hasFailedSubtest(test, failed) {
 			continue
 		}
-		findings = append(findings, Finding{Test: test, Message: failureMessage(outputByTest[test])})
+		findings = append(findings, Finding{Test: test, Message: messageFor(test, outputByTest)})
 	}
 	return findings, nil
 }
@@ -113,6 +113,21 @@ func hasFailedSubtest(test string, failed []string) bool {
 	return slices.ContainsFunc(failed, func(other string) bool {
 		return strings.HasPrefix(other, test+"/")
 	})
+}
+
+// A panic in a subtest (e.g. a fuzz seed) is printed under its parent test.
+func messageFor(test string, outputByTest map[string][]string) string {
+	name := test
+	for {
+		if message := failureMessage(outputByTest[name]); message != "" {
+			return message
+		}
+		slash := strings.LastIndex(name, "/")
+		if slash < 0 {
+			return "failed"
+		}
+		name = name[:slash]
+	}
 }
 
 // failureMessage drops go test's own lines and the "file.go:35: " prefix of t.Errorf.
@@ -129,7 +144,7 @@ func failureMessage(output []string) string {
 		}
 		return line
 	}
-	return "failed"
+	return ""
 }
 
 func firstLine(text string) string {
