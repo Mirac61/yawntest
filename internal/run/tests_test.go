@@ -20,6 +20,8 @@ func TestParseTestEvents(t *testing.T) {
 {"Action":"fail","Test":"FuzzLazytest_Initial/seed#0"}
 {"Action":"output","Test":"FuzzLazytest_Initial","Output":"panic: runtime error: index out of range [0] with length 0\n"}
 {"Action":"fail","Test":"FuzzLazytest_Initial"}
+{"Action":"output","Test":"TestLazytest_Server_handleGit_BadInput/empty_request","Output":"    git_lazytest_test.go:21: panic: nil pointer dereference (the Server is zero-valued; give it real dependencies if it needs them)\n"}
+{"Action":"fail","Test":"TestLazytest_Server_handleGit_BadInput/empty_request"}
 {"Action":"pass","Test":"TestLazytest_Task_JSONRoundtrip"}
 {"Action":"fail"}
 `
@@ -40,6 +42,11 @@ func TestParseTestEvents(t *testing.T) {
 			want: []Finding{
 				{Test: "TestLazytest_CreateTask_BadInput/invalid_json", Message: "status = 500, want < 500 for bad input"},
 				{Test: "FuzzLazytest_Initial/seed#0", Message: "panic: runtime error: index out of range [0] with length 0"},
+				{
+					Test:       "TestLazytest_Server_handleGit_BadInput/empty_request",
+					Message:    "panic: nil pointer dereference (the Server is zero-valued; give it real dependencies if it needs them)",
+					NeedsSetup: true,
+				},
 			},
 		},
 		{

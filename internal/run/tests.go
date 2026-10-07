@@ -11,10 +11,15 @@ import (
 	"strings"
 )
 
+// ZeroReceiverNote ends the panic message gen writes for methods. A failure carrying it most
+// likely means the receiver lacks dependencies, not that the code has a bug.
+const ZeroReceiverNote = "is zero-valued; give it real dependencies if it needs them"
+
 type Finding struct {
-	Dir     string
-	Test    string // e.g. TestLazytest_CreateTask_BadInput/invalid_json; empty if the package didn't build
-	Message string
+	Dir        string
+	Test       string // e.g. TestLazytest_CreateTask_BadInput/invalid_json; empty if the package didn't build
+	Message    string
+	NeedsSetup bool // a method panicked on its zero-valued receiver
 }
 
 // ponytail: one go test per dir, so nested modules work; batch by module if this gets slow.
@@ -103,7 +108,12 @@ func parseTestEvents(r io.Reader) ([]Finding, error) {
 		if hasFailedSubtest(test, failed) {
 			continue
 		}
-		findings = append(findings, Finding{Test: test, Message: messageFor(test, outputByTest)})
+		message := messageFor(test, outputByTest)
+		findings = append(findings, Finding{
+			Test:       test,
+			Message:    message,
+			NeedsSetup: strings.Contains(message, ZeroReceiverNote),
+		})
 	}
 	return findings, nil
 }

@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/lazytest/internal/run"
 )
 
 type Test struct {
@@ -123,7 +124,7 @@ func zeroReceiverNote(name string) string {
 	if !isMethod {
 		return ""
 	}
-	return "the " + receiver + " is zero-valued; give it real dependencies if it needs them"
+	return "the " + receiver + " " + run.ZeroReceiverNote
 }
 
 func (b *builder) render(pkg string) ([]byte, error) {
