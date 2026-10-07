@@ -155,6 +155,10 @@ func TestLazytest_IsValidDeadline(t *testing.T) {
 		{name: "leap day", input: time.Unix(int64(1709208000), 0).UTC()},
 		{name: "year 9999", input: time.Unix(int64(253402300799), 0).UTC()},
 		{name: "before 1970", input: time.Unix(int64(-1), 0).UTC()},
+		{name: "midnight", input: time.Unix(int64(1767225600), 0).UTC()},
+		{name: "second before midnight", input: time.Unix(int64(1767225599), 0).UTC()},
+		{name: "dst starts in berlin", input: time.Unix(int64(1774746000), 0).UTC()},
+		{name: "dst ends in berlin", input: time.Unix(int64(1792890000), 0).UTC()},
 	}
 
 	for _, test := range tests {

@@ -24,6 +24,10 @@ var unixCases = []edgeCase{
 	{Name: "leap day", Value: "int64(1709208000)"},    // 2024-02-29 12:00 UTC
 	{Name: "year 9999", Value: "int64(253402300799)"}, // 9999-12-31 23:59:59 UTC
 	{Name: "before 1970", Value: "int64(-1)"},
+	{Name: "midnight", Value: "int64(1767225600)"},               // 2026-01-01 00:00:00 UTC
+	{Name: "second before midnight", Value: "int64(1767225599)"}, // 2025-12-31 23:59:59 UTC
+	{Name: "dst starts in berlin", Value: "int64(1774746000)"},   // 2026-03-29 02:00 CET jumps to 03:00 CEST
+	{Name: "dst ends in berlin", Value: "int64(1792890000)"},     // 2026-10-25 03:00 CEST falls back to 02:00 CET
 }
 
 var untypedSeeds = map[string][]string{

@@ -94,6 +94,10 @@ func FuzzLazytest_Days(f *testing.F) {
 	f.Add(int64(1709208000), int64(1709208000))
 	f.Add(int64(253402300799), int64(253402300799))
 	f.Add(int64(-1), int64(-1))
+	f.Add(int64(1767225600), int64(1767225600))
+	f.Add(int64(1767225599), int64(1767225599))
+	f.Add(int64(1774746000), int64(1774746000))
+	f.Add(int64(1792890000), int64(1792890000))
 
 	f.Fuzz(func(t *testing.T, startUnix int64, endUnix int64) {
 		start := time.Unix(startUnix, 0).UTC()
@@ -200,6 +204,10 @@ func FuzzLazytest_WeekRange(f *testing.F) {
 	f.Add(int64(1709208000))
 	f.Add(int64(253402300799))
 	f.Add(int64(-1))
+	f.Add(int64(1767225600))
+	f.Add(int64(1767225599))
+	f.Add(int64(1774746000))
+	f.Add(int64(1792890000))
 
 	f.Fuzz(func(t *testing.T, dayUnix int64) {
 		day := time.Unix(dayUnix, 0).UTC()
