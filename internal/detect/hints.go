@@ -20,6 +20,7 @@ func Hints(fset *token.FileSet, file *ast.File) []Hint {
 	var hints []Hint
 	hints = append(hints, floatMoney(fset, file)...)
 	hints = append(hints, nowWithoutLocation(fset, file, imports)...)
+	hints = append(hints, secretComparisons(fset, file)...)
 
 	slices.SortStableFunc(hints, func(a, b Hint) int { return a.Line - b.Line })
 	return hints

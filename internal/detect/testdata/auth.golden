@@ -1,0 +1,6 @@
+12-12 Valid pure-func: basic params, no I/O
+    params: (sessionID string, stored string), results: (bool)
+22-22 Retries pure-func: basic params, no I/O
+    params: (tokenCount int), results: (bool)
+hint 10 auth: Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it
+hint 12 auth: sessionID compared with !=; use subtle.ConstantTimeCompare so the timing doesn't leak it
