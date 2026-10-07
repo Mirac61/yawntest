@@ -12,6 +12,7 @@ import (
 //   - Generated: lives in a "Code generated ... DO NOT EDIT." file
 //   - Vendored: lives under vendor/
 //   - sub/, z.go: a subdir sorted between files, so Dirs must not list testdata twice
+//   - fee.go: no candidates, only a money hint, and must still be returned
 func TestUntested(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -28,18 +29,20 @@ func TestUntested(t *testing.T) {
 			if err != nil {
 				t.Fatalf("scan: %v", err)
 			}
-			if len(files) != 1 {
-				t.Fatalf("got %d files, want 1", len(files))
-			}
-
-			file := files[0]
-			if got, want := file.Package, "pkg"; got != want {
-				t.Errorf("Package = %q, want %q", got, want)
-			}
 
 			var names []string
-			for _, match := range file.Matches {
-				names = append(names, match.Name)
+			hintCount := 0
+			for _, file := range files {
+				if got, want := file.Package, "pkg"; got != want {
+					t.Errorf("%s: Package = %q, want %q", file.Path, got, want)
+				}
+				for _, match := range file.Matches {
+					names = append(names, match.Name)
+				}
+				hintCount += len(file.Hints)
+			}
+			if hintCount != 1 {
+				t.Errorf("got %d hints, want 1 (defaultFee in a file without candidates)", hintCount)
 			}
 			if !slices.Equal(names, test.want) {
 				t.Errorf("names = %v, want %v", names, test.want)

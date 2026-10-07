@@ -15,6 +15,7 @@ type File struct {
 	Path    string
 	Package string
 	Matches []detect.Match
+	Hints   []detect.Hint
 }
 
 type identSet map[string]bool
@@ -58,6 +59,7 @@ func Untested(root string, countLazytest bool) ([]File, error) {
 				Path:    path,
 				Package: file.Name.Name,
 				Matches: detect.File(fset, file),
+				Hints:   detect.Hints(fset, file),
 			})
 		}
 		return nil
@@ -67,6 +69,15 @@ func Untested(root string, countLazytest bool) ([]File, error) {
 	}
 
 	return withoutTested(files, testIdentsByDir), nil
+}
+
+func HasMatches(files []File) bool {
+	for _, file := range files {
+		if len(file.Matches) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // Dirs returns every directory below root holding a file whose name passes keep.
@@ -131,8 +142,8 @@ func withoutTested(files []File, testIdentsByDir map[string]identSet) []File {
 			}
 		}
 
-		if len(matches) > 0 {
-			file.Matches = matches
+		file.Matches = matches
+		if len(matches) > 0 || len(file.Hints) > 0 {
 			untested = append(untested, file)
 		}
 	}

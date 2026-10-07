@@ -104,7 +104,7 @@ func parseDiff(top, diff string) map[string]File {
 	return changed
 }
 
-// KeepChangedMatches keeps only matches whose lines changed. Used by --check.
+// KeepChangedMatches keeps only matches and hints whose lines changed. Used by --check.
 func KeepChangedMatches(files []scan.File, changed map[string]File) ([]scan.File, error) {
 	var kept []scan.File
 	for _, file := range files {
@@ -119,8 +119,15 @@ func KeepChangedMatches(files []scan.File, changed map[string]File) ([]scan.File
 				matches = append(matches, match)
 			}
 		}
-		if len(matches) > 0 {
-			file.Matches = matches
+		var hints []detect.Hint
+		for _, hint := range file.Hints {
+			if fileChanges.Touches(hint.Line, hint.Line) {
+				hints = append(hints, hint)
+			}
+		}
+
+		file.Matches, file.Hints = matches, hints
+		if len(matches) > 0 || len(hints) > 0 {
 			kept = append(kept, file)
 		}
 	}
@@ -137,7 +144,9 @@ func KeepChangedFiles(files []scan.File, changed map[string]File) ([]scan.File, 
 
 	touched := map[string]bool{}
 	for _, file := range changedMatches {
-		touched[file.Path] = true
+		if len(file.Matches) > 0 {
+			touched[file.Path] = true
+		}
 	}
 
 	var kept []scan.File
