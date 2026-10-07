@@ -16,17 +16,28 @@ import (
 )
 
 const (
-	exitProblems = 1 // --check: untested candidates or error paths, --run: findings; lets CI fail
+	exitProblems = 1 // see report.Result.HasProblems; lets CI fail
 	exitError    = 2
 )
 
 type options struct {
-	root    string
-	force   bool
-	changed bool
+	root     string
+	check    bool
+	force    bool
+	runTests bool
+	changed  bool
 }
 
 func main() {
+	opts := parseFlags()
+	result := collect(opts)
+	printText(opts, result)
+	if result.HasProblems() {
+		os.Exit(exitProblems)
+	}
+}
+
+func parseFlags() options {
 	check := flag.Bool("check", false, "report untested patterns without writing files")
 	force := flag.Bool("force", false, "regenerate existing lazytest files")
 	runTests := flag.Bool("run", false, "run the generated tests afterwards and report failures as findings")
@@ -37,18 +48,37 @@ func main() {
 	}
 	flag.Parse()
 
-	opts := options{root: rootArg(), force: *force, changed: *changed}
-	if *check {
-		runCheck(opts)
+	return options{root: rootArg(), check: *check, force: *force, runTests: *runTests, changed: *changed}
+}
+
+func collect(opts options) report.Result {
+	if opts.check {
+		return check(opts)
+	}
+
+	result := report.Result{Generated: generate(opts)}
+	if opts.runTests {
+		dirs := must(scan.Dirs(opts.root, scan.IsLazytestFile))
+		result.Findings = must(run.LazytestTests(dirs))
+	}
+	return result
+}
+
+func printText(opts options, result report.Result) {
+	if opts.check {
+		mustReport(report.Untested(os.Stdout, result.Untested))
+		mustReport(report.Hints(os.Stdout, result.Untested))
+		mustReport(report.ErrorPaths(os.Stdout, result.ErrorPaths))
 		return
 	}
-	runGenerate(opts)
-	if *runTests {
-		runFindings(opts.root)
+
+	mustReport(report.Generated(os.Stdout, result.Generated))
+	if opts.runTests {
+		mustReport(report.Findings(os.Stdout, result.Findings))
 	}
 }
 
-func runCheck(opts options) {
+func check(opts options) report.Result {
 	files := must(scan.Untested(opts.root, true))
 	sourceDirs := must(scan.Dirs(opts.root, scan.IsSourceFile))
 	errorPaths := must(run.UntestedErrorPaths(sourceDirs))
@@ -57,18 +87,11 @@ func runCheck(opts options) {
 		files = must(changes.KeepChangedMatches(files, changed))
 		errorPaths = must(changes.KeepChangedErrorPaths(errorPaths, changed))
 	}
-
-	mustReport(report.Untested(os.Stdout, files))
-	mustReport(report.Hints(os.Stdout, files))
-	mustReport(report.ErrorPaths(os.Stdout, errorPaths))
-	// Hints are advice and don't fail the check.
-	if scan.HasMatches(files) || len(errorPaths) > 0 {
-		os.Exit(exitProblems)
-	}
+	return report.Result{Untested: files, ErrorPaths: errorPaths}
 }
 
 // Without --force existing lazytest files count as tests, so only sources with new candidates show up.
-func runGenerate(opts options) {
+func generate(opts options) []report.GeneratedFile {
 	files := must(scan.Untested(opts.root, !opts.force))
 	if opts.changed {
 		changed := must(changes.SinceHEAD(opts.root))
@@ -81,17 +104,7 @@ func runGenerate(opts options) {
 			results = append(results, must(generateFile(file, opts.force)))
 		}
 	}
-	mustReport(report.Generated(os.Stdout, results))
-}
-
-func runFindings(root string) {
-	dirs := must(scan.Dirs(root, scan.IsLazytestFile))
-	findings := must(run.LazytestTests(dirs))
-
-	mustReport(report.Findings(os.Stdout, findings))
-	if len(findings) > 0 {
-		os.Exit(exitProblems)
-	}
+	return results
 }
 
 func generateFile(file scan.File, force bool) (report.GeneratedFile, error) {
