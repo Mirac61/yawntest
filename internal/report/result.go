@@ -13,7 +13,8 @@ type Result struct {
 	Findings   []run.Finding // --run
 }
 
-// HasProblems decides the exit code. Hints are advice and don't count.
+// HasProblems decides the exit code. Hints and tests that only miss setup don't count.
 func (r Result) HasProblems() bool {
-	return scan.HasMatches(r.Untested) || len(r.ErrorPaths) > 0 || len(r.Findings) > 0
+	real, _ := splitFindings(r.Findings)
+	return scan.HasMatches(r.Untested) || len(r.ErrorPaths) > 0 || len(real) > 0
 }

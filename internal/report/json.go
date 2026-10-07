@@ -49,9 +49,10 @@ type jsonTest struct {
 }
 
 type jsonFinding struct {
-	Dir     string `json:"dir"`
-	Test    string `json:"test,omitempty"`
-	Message string `json:"message"`
+	Dir        string `json:"dir"`
+	Test       string `json:"test,omitempty"`
+	Message    string `json:"message"`
+	NeedsSetup bool   `json:"needsSetup,omitempty"`
 }
 
 func JSON(w io.Writer, result Result) error {
@@ -73,7 +74,9 @@ func JSON(w io.Writer, result Result) error {
 		out.Generated = append(out.Generated, generatedJSON(file))
 	}
 	for _, finding := range result.Findings {
-		out.Findings = append(out.Findings, jsonFinding{Dir: finding.Dir, Test: finding.Test, Message: finding.Message})
+		out.Findings = append(out.Findings, jsonFinding{
+			Dir: finding.Dir, Test: finding.Test, Message: finding.Message, NeedsSetup: finding.NeedsSetup,
+		})
 	}
 
 	encoder := json.NewEncoder(w)
