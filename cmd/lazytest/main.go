@@ -49,17 +49,13 @@ func main() {
 }
 
 func runCheck(opts options) {
-	files, err := scan.Untested(opts.root, true)
-	if err != nil {
-		fail(err)
-	}
+	files := must(scan.Untested(opts.root, true))
 	if opts.changed {
-		files = onlyChanged(opts.root, files, changes.KeepChangedMatches)
+		changed := must(changes.SinceHEAD(opts.root))
+		files = must(changes.KeepChangedMatches(files, changed))
 	}
 
-	if err := report.Untested(os.Stdout, files); err != nil {
-		fail(fmt.Errorf("write report: %w", err))
-	}
+	mustReport(report.Untested(os.Stdout, files))
 	if len(files) > 0 {
 		os.Exit(exitProblems)
 	}
@@ -67,54 +63,24 @@ func runCheck(opts options) {
 
 // Without --force existing lazytest files count as tests, so only sources with new candidates show up.
 func runGenerate(opts options) {
-	files, err := scan.Untested(opts.root, !opts.force)
-	if err != nil {
-		fail(err)
-	}
+	files := must(scan.Untested(opts.root, !opts.force))
 	if opts.changed {
-		files = onlyChanged(opts.root, files, changes.KeepChangedFiles)
+		changed := must(changes.SinceHEAD(opts.root))
+		files = must(changes.KeepChangedFiles(files, changed))
 	}
 
 	var results []report.GeneratedFile
 	for _, file := range files {
-		result, err := generateFile(file, opts.force)
-		if err != nil {
-			fail(err)
-		}
-		results = append(results, result)
+		results = append(results, must(generateFile(file, opts.force)))
 	}
-
-	if err := report.Generated(os.Stdout, results); err != nil {
-		fail(fmt.Errorf("write report: %w", err))
-	}
-}
-
-type changeFilter func([]scan.File, map[string]changes.File) ([]scan.File, error)
-
-func onlyChanged(root string, files []scan.File, keep changeFilter) []scan.File {
-	changed, err := changes.SinceHEAD(root)
-	if err != nil {
-		fail(err)
-	}
-	kept, err := keep(files, changed)
-	if err != nil {
-		fail(err)
-	}
-	return kept
+	mustReport(report.Generated(os.Stdout, results))
 }
 
 func runFindings(root string) {
-	dirs, err := scan.Dirs(root, scan.IsLazytestFile)
-	if err != nil {
-		fail(err)
-	}
-	findings, err := run.LazytestTests(dirs)
-	if err != nil {
-		fail(err)
-	}
-	if err := report.Findings(os.Stdout, findings); err != nil {
-		fail(fmt.Errorf("write report: %w", err))
-	}
+	dirs := must(scan.Dirs(root, scan.IsLazytestFile))
+	findings := must(run.LazytestTests(dirs))
+
+	mustReport(report.Findings(os.Stdout, findings))
 	if len(findings) > 0 {
 		os.Exit(exitProblems)
 	}
@@ -153,6 +119,20 @@ func fileExists(path string) (bool, error) {
 		return false, nil
 	}
 	return err == nil, err
+}
+
+// Every error in a CLI run is fatal, so must ends the program instead of returning.
+func must[T any](value T, err error) T {
+	if err != nil {
+		fail(err)
+	}
+	return value
+}
+
+func mustReport(err error) {
+	if err != nil {
+		fail(fmt.Errorf("write report: %w", err))
+	}
 }
 
 func fail(err error) {
