@@ -54,6 +54,7 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 		match.Params = fields(fn.Type.Params, imports)
 		match.Results = fields(fn.Type.Results, imports)
 		match.NamedValidator = detector.pattern == PatternValidation && validationPrefix(fn.Name.Name) != ""
+		match.DecodesJSON = detector.pattern == PatternHTTPHandler && decodesJSON(fn.Body, imports)
 		return match, true
 	}
 	return Match{}, false

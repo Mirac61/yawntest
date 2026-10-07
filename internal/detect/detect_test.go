@@ -55,6 +55,9 @@ func detectFixture(t *testing.T, path string) string {
 		if match.NamedValidator {
 			fmt.Fprintln(&out, "    named validator")
 		}
+		if match.DecodesJSON {
+			fmt.Fprintln(&out, "    decodes JSON")
+		}
 		if len(match.Fields) > 0 {
 			fmt.Fprintf(&out, "    fields: %s\n", formatFields(match.Fields))
 		}

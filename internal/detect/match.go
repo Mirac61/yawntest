@@ -29,6 +29,7 @@ type Match struct {
 
 	// Validate*, IsValid* or Check*: the name promises that empty input is rejected.
 	NamedValidator bool
+	DecodesJSON    bool // http handlers that read a JSON request body
 }
 
 func (m Match) Symbol() string {
