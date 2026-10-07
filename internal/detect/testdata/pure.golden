@@ -8,3 +8,4 @@
     params: (start time.Time, end time.Time), results: (int)
 24-24 Label pure-func: basic params, no I/O
     params: (n int), results: (string)
+hint 35 dates: time.Now() uses the server's local time zone; call .UTC() or .In(loc) before working with the date

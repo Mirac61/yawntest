@@ -15,8 +15,11 @@ type Hint struct {
 }
 
 func Hints(fset *token.FileSet, file *ast.File) []Hint {
+	imports := newImportTable(file)
+
 	var hints []Hint
 	hints = append(hints, floatMoney(fset, file)...)
+	hints = append(hints, nowWithoutLocation(fset, file, imports)...)
 
 	slices.SortStableFunc(hints, func(a, b Hint) int { return a.Line - b.Line })
 	return hints
