@@ -87,7 +87,14 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 		b.execute(rejectsEmptyTemplate, data)
 		caseCount++
 	}
-	return fmt.Sprintf("%d cases (%d expected values TODO)", caseCount, len(cases)), true
+	return fmt.Sprintf("%s (%s TODO)", plural(caseCount, "case"), plural(len(cases), "expected value")), true
+}
+
+func plural(count int, noun string) string {
+	if count == 1 {
+		return "1 " + noun
+	}
+	return fmt.Sprintf("%d %ss", count, noun)
 }
 
 func resultVar(resultType string) string {
