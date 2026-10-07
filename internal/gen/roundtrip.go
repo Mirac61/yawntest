@@ -8,7 +8,7 @@ import (
 
 var roundtripTemplate = template.Must(template.New("roundtrip").Parse(`
 // lazytest: json-roundtrip
-func TestLazytest_{{.Type}}_JSONRoundtrip(t *testing.T) {
+func TestLazytest_{{.TestName}}_JSONRoundtrip(t *testing.T) {
 	want := {{.Type}}{
 	{{- range .Fields}}
 		{{.Name}}: {{.Value}},
@@ -47,8 +47,9 @@ func (b *builder) roundtrip(match detect.Match) string {
 	}
 
 	b.execute(roundtripTemplate, map[string]any{
-		"Type":   match.Name,
-		"Fields": fields,
+		"Type":     match.Name,
+		"TestName": testName(match.Name),
+		"Fields":   fields,
 	})
 	return "1 test"
 }

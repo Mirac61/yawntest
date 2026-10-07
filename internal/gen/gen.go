@@ -64,9 +64,24 @@ func (b *builder) add(match detect.Match) (summary string, ok bool) {
 		return b.roundtrip(match), true
 	case detect.PatternPureFunc:
 		return b.fuzz(match), true
+	case detect.PatternHTTPHandler:
+		return b.httpHandler(match)
 	default:
 		return "", false
 	}
+}
+
+// callable returns how a test calls the func: Add, or new(Server).CreateTask for methods.
+func callable(name string) string {
+	receiver, method, isMethod := strings.Cut(name, ".")
+	if !isMethod {
+		return name
+	}
+	return "new(" + receiver + ")." + method
+}
+
+func testName(name string) string {
+	return strings.ReplaceAll(name, ".", "_")
 }
 
 func (b *builder) use(imports ...string) {
