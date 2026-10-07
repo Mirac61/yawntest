@@ -1,4 +1,8 @@
 12 Health http-handler: handler signature
+    params: (w ?, r ?), results: 0
 14 Server.CreateTask http-handler: handler signature, decodes JSON body
+    params: (w ?, r ?), results: 0
 21 Server.handleList http-handler: returns http.HandlerFunc
+    params: (), results: 1
 25 aliased http-handler: handler signature
+    params: (w ?, r ?), results: 0

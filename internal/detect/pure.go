@@ -31,12 +31,12 @@ func detectPureFunc(fn *ast.FuncDecl, imports importTable) (string, bool) {
 		return "", false
 	}
 
-	params := fieldTypes(fn.Type.Params)
+	params := fields(fn.Type.Params, imports)
 	if len(params) == 0 {
 		return "", false
 	}
 	for _, param := range params {
-		if !isBasicParam(param, imports) {
+		if param.Type == "" {
 			return "", false
 		}
 	}
@@ -45,25 +45,6 @@ func detectPureFunc(fn *ast.FuncDecl, imports importTable) (string, bool) {
 		return "", false
 	}
 	return "basic params, no I/O", true
-}
-
-func isBasicParam(expr ast.Expr, imports importTable) bool {
-	switch typ := expr.(type) {
-	case *ast.ArrayType:
-		isSlice := typ.Len == nil
-		return isSlice && isBasicScalar(typ.Elt, imports)
-	case *ast.Ellipsis:
-		return isBasicScalar(typ.Elt, imports)
-	default:
-		return isBasicScalar(expr, imports)
-	}
-}
-
-func isBasicScalar(expr ast.Expr, imports importTable) bool {
-	if ident, ok := expr.(*ast.Ident); ok {
-		return basicTypes[ident.Name]
-	}
-	return imports.isMember(expr, "time", "Time")
 }
 
 // ponytail: misses I/O hidden in called funcs; needs go/types.

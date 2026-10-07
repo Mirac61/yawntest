@@ -1,1 +1,2 @@
-3 Task json-roundtrip: has json tags
+7 Task json-roundtrip: has json tags
+    fields: (ID int, Title string, Tags []string, Due time.Time, Owner ?, Done bool)

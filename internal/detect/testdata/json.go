@@ -1,9 +1,19 @@
 package api
 
+import "time"
+
+type Base struct{ CreatedBy string }
+
 type Task struct {
-	ID, Owner int    `json:"id"`
-	Title     string `json:"title,omitempty"`
-	secret    string
+	Base
+	ID       int       `json:"id"`
+	Title    string    `json:"title,omitempty"`
+	Tags     []string  `json:"tags"`
+	Due      time.Time `json:"due"`
+	Owner    *string   `json:"owner"`
+	Done     bool
+	Secret   string `json:"-"`
+	internal string
 }
 
 type Hidden struct {

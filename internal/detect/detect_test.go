@@ -52,8 +52,26 @@ func detectFixture(t *testing.T, path string) string {
 	var out strings.Builder
 	for _, match := range File(fset, file) {
 		fmt.Fprintf(&out, "%d %s %s: %s\n", match.Line, match.Name, match.Pattern, match.Reason)
+		if len(match.Fields) > 0 {
+			fmt.Fprintf(&out, "    fields: %s\n", formatFields(match.Fields))
+		}
+		if len(match.Params) > 0 || match.Results > 0 {
+			fmt.Fprintf(&out, "    params: %s, results: %d\n", formatFields(match.Params), match.Results)
+		}
 	}
 	return out.String()
+}
+
+func formatFields(fields []Field) string {
+	var parts []string
+	for _, field := range fields {
+		typ := field.Type
+		if typ == "" {
+			typ = "?"
+		}
+		parts = append(parts, strings.TrimSpace(field.Name+" "+typ))
+	}
+	return "(" + strings.Join(parts, ", ") + ")"
 }
 
 func TestMatchSymbol(t *testing.T) {

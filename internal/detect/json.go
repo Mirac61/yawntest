@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func matchJSONStructs(fset *token.FileSet, decl *ast.GenDecl) []Match {
+func matchJSONStructs(fset *token.FileSet, decl *ast.GenDecl, imports importTable) []Match {
 	if decl.Tok != token.TYPE {
 		return nil
 	}
@@ -29,6 +29,7 @@ func matchJSONStructs(fset *token.FileSet, decl *ast.GenDecl) []Match {
 		}
 
 		match := newMatch(fset, typeSpec, typeSpec.Name.Name, PatternJSONRoundtrip, "has json tags")
+		match.Fields = encodedFields(structType, imports)
 		matches = append(matches, match)
 	}
 	return matches
@@ -36,26 +37,46 @@ func matchJSONStructs(fset *token.FileSet, decl *ast.GenDecl) []Match {
 
 func hasJSONField(structType *ast.StructType) bool {
 	for _, field := range structType.Fields.List {
-		if hasJSONName(field) {
+		name, tagged := jsonTagName(field)
+		if tagged && name != "-" {
 			return true
 		}
 	}
 	return false
 }
 
-func hasJSONName(field *ast.Field) bool {
+// Embedded fields are left out, their zero value round-trips anyway.
+func encodedFields(structType *ast.StructType, imports importTable) []Field {
+	var encoded []Field
+	for _, field := range structType.Fields.List {
+		name, _ := jsonTagName(field)
+		if name == "-" {
+			continue
+		}
+
+		typ := typeName(field.Type, imports)
+		for _, fieldName := range field.Names {
+			if fieldName.IsExported() {
+				encoded = append(encoded, Field{Name: fieldName.Name, Type: typ})
+			}
+		}
+	}
+	return encoded
+}
+
+func jsonTagName(field *ast.Field) (name string, tagged bool) {
 	if field.Tag == nil {
-		return false
+		return "", false
 	}
 	tag, err := strconv.Unquote(field.Tag.Value)
 	if err != nil {
-		return false
+		return "", false
 	}
 
 	value, ok := reflect.StructTag(tag).Lookup("json")
 	if !ok {
-		return false
+		return "", false
 	}
-	name, _, _ := strings.Cut(value, ",")
-	return name != "-"
+	name, _, _ = strings.Cut(value, ",")
+	return name, true
 }

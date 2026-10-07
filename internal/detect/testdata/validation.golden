@@ -1,6 +1,12 @@
 10 ValidateEmail validation: name Validate*, returns error
+    params: (s string), results: 1
 17 IsValidAge validation: name IsValid*, returns bool
+    params: (n int), results: 1
 19 User.Validate validation: name Validate*, returns error
+    params: (), results: 1
 21 checkName validation: name Check*, returns bool
+    params: (s string), results: 1
 23 IsEmail validation: string param, returns bool
+    params: (s string), results: 1
 29 Checkout pure-func: basic params, no I/O
+    params: (id int, qty int), results: 1

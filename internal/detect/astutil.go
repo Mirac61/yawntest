@@ -25,6 +25,54 @@ func fieldTypes(fields *ast.FieldList) []ast.Expr {
 	return types
 }
 
+func fields(list *ast.FieldList, imports importTable) []Field {
+	if list == nil {
+		return nil
+	}
+
+	var result []Field
+	for _, field := range list.List {
+		typ := typeName(field.Type, imports)
+		if len(field.Names) == 0 {
+			result = append(result, Field{Type: typ})
+		}
+		for _, name := range field.Names {
+			result = append(result, Field{Name: name.Name, Type: typ})
+		}
+	}
+	return result
+}
+
+func typeName(expr ast.Expr, imports importTable) string {
+	switch typ := expr.(type) {
+	case *ast.ArrayType:
+		isSlice := typ.Len == nil
+		elem := scalarTypeName(typ.Elt, imports)
+		if !isSlice || elem == "" {
+			return ""
+		}
+		return "[]" + elem
+	case *ast.Ellipsis:
+		elem := scalarTypeName(typ.Elt, imports)
+		if elem == "" {
+			return ""
+		}
+		return "..." + elem
+	default:
+		return scalarTypeName(expr, imports)
+	}
+}
+
+func scalarTypeName(expr ast.Expr, imports importTable) string {
+	if ident, ok := expr.(*ast.Ident); ok && basicTypes[ident.Name] {
+		return ident.Name
+	}
+	if imports.isMember(expr, "time", "Time") {
+		return "time.Time"
+	}
+	return ""
+}
+
 func funcName(fn *ast.FuncDecl) string {
 	if fn.Recv == nil || len(fn.Recv.List) == 0 {
 		return fn.Name.Name

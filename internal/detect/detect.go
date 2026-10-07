@@ -28,7 +28,7 @@ func File(fset *token.FileSet, file *ast.File) []Match {
 				matches = append(matches, match)
 			}
 		case *ast.GenDecl:
-			matches = append(matches, matchJSONStructs(fset, decl)...)
+			matches = append(matches, matchJSONStructs(fset, decl, imports)...)
 		}
 	}
 	return matches
@@ -42,9 +42,14 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 
 	for _, detector := range funcDetectors {
 		reason, ok := detector.detect(fn, imports)
-		if ok {
-			return newMatch(fset, fn, funcName(fn), detector.pattern, reason), true
+		if !ok {
+			continue
 		}
+
+		match := newMatch(fset, fn, funcName(fn), detector.pattern, reason)
+		match.Params = fields(fn.Type.Params, imports)
+		match.Results = len(fieldTypes(fn.Type.Results))
+		return match, true
 	}
 	return Match{}, false
 }
