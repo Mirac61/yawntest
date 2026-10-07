@@ -52,6 +52,9 @@ func detectFixture(t *testing.T, path string) string {
 	var out strings.Builder
 	for _, match := range File(fset, file) {
 		fmt.Fprintf(&out, "%d %s %s: %s\n", match.Line, match.Name, match.Pattern, match.Reason)
+		if match.NamedValidator {
+			fmt.Fprintln(&out, "    named validator")
+		}
 		if len(match.Fields) > 0 {
 			fmt.Fprintf(&out, "    fields: %s\n", formatFields(match.Fields))
 		}

@@ -26,6 +26,9 @@ type Match struct {
 	Fields  []Field // structs: fields encoding/json writes
 	Params  []Field // funcs
 	Results []Field // funcs
+
+	// Validate*, IsValid* or Check*: the name promises that empty input is rejected.
+	NamedValidator bool
 }
 
 func (m Match) Symbol() string {
