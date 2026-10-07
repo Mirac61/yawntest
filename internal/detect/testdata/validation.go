@@ -31,3 +31,7 @@ func Checkout(id, qty int) error { return nil }
 func Ping(ctx context.Context) error { return nil }
 
 func CheckConfig() error { return nil }
+
+type Box[T any] struct{ value T }
+
+func (b Box[T]) Validate() error { return nil }

@@ -39,6 +39,10 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 	if fn.Body == nil {
 		return Match{}, false
 	}
+	// Methods on generic types (T[K]) can't be called without a type argument.
+	if fn.Recv != nil && receiverTypeName(fn.Recv.List[0].Type) == "" {
+		return Match{}, false
+	}
 
 	for _, detector := range funcDetectors {
 		reason, ok := detector.detect(fn, imports)

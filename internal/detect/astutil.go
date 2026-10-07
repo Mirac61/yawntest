@@ -94,13 +94,6 @@ func receiverTypeName(expr ast.Expr) string {
 		expr = pointer.X
 	}
 
-	switch generic := expr.(type) {
-	case *ast.IndexExpr:
-		expr = generic.X
-	case *ast.IndexListExpr:
-		expr = generic.X
-	}
-
 	ident, ok := expr.(*ast.Ident)
 	if !ok {
 		return ""
