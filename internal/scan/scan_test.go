@@ -11,26 +11,39 @@ import (
 //   - OnlyInLazytest: covered by a generated lazytest file
 //   - Generated: lives in a "Code generated ... DO NOT EDIT." file
 //   - Vendored: lives under vendor/
-func TestUntestedReportsOnlyUncoveredSymbols(t *testing.T) {
-	files, err := Untested("testdata")
-	if err != nil {
-		t.Fatalf("scan: %v", err)
-	}
-	if len(files) != 1 {
-		t.Fatalf("got %d files, want 1", len(files))
-	}
-
-	file := files[0]
-	if got, want := file.Package, "pkg"; got != want {
-		t.Errorf("Package = %q, want %q", got, want)
+func TestUntested(t *testing.T) {
+	tests := []struct {
+		name          string
+		countLazytest bool
+		want          []string
+	}{
+		{name: "lazytest files count as tests", countLazytest: true, want: []string{"Untested"}},
+		{name: "lazytest files ignored", countLazytest: false, want: []string{"Untested", "OnlyInLazytest"}},
 	}
 
-	var names []string
-	for _, match := range file.Matches {
-		names = append(names, match.Name)
-	}
-	if want := []string{"Untested"}; !slices.Equal(names, want) {
-		t.Errorf("names = %v, want %v", names, want)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			files, err := Untested("testdata", test.countLazytest)
+			if err != nil {
+				t.Fatalf("scan: %v", err)
+			}
+			if len(files) != 1 {
+				t.Fatalf("got %d files, want 1", len(files))
+			}
+
+			file := files[0]
+			if got, want := file.Package, "pkg"; got != want {
+				t.Errorf("Package = %q, want %q", got, want)
+			}
+
+			var names []string
+			for _, match := range file.Matches {
+				names = append(names, match.Name)
+			}
+			if !slices.Equal(names, test.want) {
+				t.Errorf("names = %v, want %v", names, test.want)
+			}
+		})
 	}
 }
 

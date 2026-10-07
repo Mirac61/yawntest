@@ -28,7 +28,7 @@ func main() {
 		os.Exit(exitError)
 	}
 
-	files, err := scan.Untested(rootArg())
+	files, err := scan.Untested(rootArg(), true)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "lazytest:", err)
 		os.Exit(exitError)
