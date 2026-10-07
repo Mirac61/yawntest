@@ -10,19 +10,21 @@ import (
 
 	"github.com/Mirac61/lazytest/internal/gen"
 	"github.com/Mirac61/lazytest/internal/report"
+	"github.com/Mirac61/lazytest/internal/run"
 	"github.com/Mirac61/lazytest/internal/scan"
 )
 
 const (
-	exitMissingTests = 1 // lets --check fail a CI job
-	exitError        = 2
+	exitProblems = 1 // untested candidates with --check, findings with --run; lets CI fail
+	exitError    = 2
 )
 
 func main() {
 	check := flag.Bool("check", false, "report untested patterns without writing files")
 	force := flag.Bool("force", false, "regenerate existing lazytest files")
+	runTests := flag.Bool("run", false, "run the generated tests afterwards and report failures as findings")
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: lazytest [--check] [--force] [path]")
+		fmt.Fprintln(os.Stderr, "usage: lazytest [--check] [--force] [--run] [path]")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -32,6 +34,9 @@ func main() {
 		return
 	}
 	runGenerate(rootArg(), *force)
+	if *runTests {
+		runFindings(rootArg())
+	}
 }
 
 func runCheck(root string) {
@@ -43,7 +48,7 @@ func runCheck(root string) {
 		fail(fmt.Errorf("write report: %w", err))
 	}
 	if len(files) > 0 {
-		os.Exit(exitMissingTests)
+		os.Exit(exitProblems)
 	}
 }
 
@@ -65,6 +70,23 @@ func runGenerate(root string, force bool) {
 
 	if err := report.Generated(os.Stdout, results); err != nil {
 		fail(fmt.Errorf("write report: %w", err))
+	}
+}
+
+func runFindings(root string) {
+	dirs, err := scan.Dirs(root, scan.IsLazytestFile)
+	if err != nil {
+		fail(err)
+	}
+	findings, err := run.LazytestTests(dirs)
+	if err != nil {
+		fail(err)
+	}
+	if err := report.Findings(os.Stdout, findings); err != nil {
+		fail(fmt.Errorf("write report: %w", err))
+	}
+	if len(findings) > 0 {
+		os.Exit(exitProblems)
 	}
 }
 
