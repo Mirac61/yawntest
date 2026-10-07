@@ -37,37 +37,6 @@ func lazytestSame(a, b any) bool {
 }
 `))
 
-// Unix 0, leap day 2024-02-29 12:00 UTC, 9999-12-31 23:59:59 UTC, one second before 1970.
-var unixSeeds = []string{"int64(0)", "int64(1709208000)", "int64(253402300799)", "int64(-1)"}
-
-var untypedSeeds = map[string][]string{
-	"string":  {`""`, `" "`, `"a"`, `strings.Repeat("x", 10000)`, `"ünïcødé"`, `"😀"`, `"\x00"`, `"' OR 1=1 --"`},
-	"bool":    {"false", "true"},
-	"float64": {"0.0", "math.Copysign(0, -1)", "0.1", "-1.0", "1e308", "math.NaN()", "math.Inf(1)"},
-	"float32": {"0", "math.Copysign(0, -1)", "0.1", "-1", "math.MaxFloat32", "math.NaN()", "math.Inf(1)"},
-	"[]byte":  {"[]byte(nil)", "[]byte{}", `[]byte("a")`, "make([]byte, 10000)"},
-	"int":     signedSeeds(""),
-	"int8":    signedSeeds("8"),
-	"int16":   signedSeeds("16"),
-	"int32":   signedSeeds("32"),
-	"rune":    signedSeeds("32"),
-	"int64":   signedSeeds("64"),
-	"uint":    unsignedSeeds(""),
-	"uint8":   unsignedSeeds("8"),
-	"byte":    unsignedSeeds("8"),
-	"uint16":  unsignedSeeds("16"),
-	"uint32":  unsignedSeeds("32"),
-	"uint64":  unsignedSeeds("64"),
-}
-
-func signedSeeds(bits string) []string {
-	return []string{"0", "1", "-1", "math.MaxInt" + bits, "math.MinInt" + bits}
-}
-
-func unsignedSeeds(bits string) []string {
-	return []string{"0", "1", "math.MaxUint" + bits}
-}
-
 // Names a fuzz arg must not take: the closure's own names and the packages it uses.
 var reservedNames = map[string]bool{
 	"_": true, "t": true, "f": true, "got": true, "again": true,
@@ -164,7 +133,7 @@ func (b *builder) fuzzArg(index int, param detect.Field) fuzzArg {
 		arg.seeds = unixSeeds
 		value = "time.Unix(" + fuzzName + ", 0).UTC()"
 	} else {
-		arg.seeds = b.typedSeeds(elemType)
+		arg.seeds = values(b.edgeCases(elemType))
 	}
 	arg.name = fuzzName
 
@@ -181,27 +150,6 @@ func (b *builder) fuzzArg(index int, param detect.Field) fuzzArg {
 		arg.callArg = paramName + "..."
 	}
 	return arg
-}
-
-// f.Add needs the exact param type, so seeds get converted unless Go's default type already fits.
-func (b *builder) typedSeeds(typ string) []string {
-	needsConversion := typ != "string" && typ != "bool" && typ != "int" && typ != "float64" && typ != "[]byte"
-
-	var seeds []string
-	for _, seed := range untypedSeeds[typ] {
-		if strings.Contains(seed, "math.") {
-			b.use("math")
-		}
-		if strings.Contains(seed, "strings.") {
-			b.use("strings")
-		}
-
-		if needsConversion {
-			seed = typ + "(" + seed + ")"
-		}
-		seeds = append(seeds, seed)
-	}
-	return seeds
 }
 
 // seedRows combines the per-arg seeds into f.Add calls; shorter lists wrap around.
