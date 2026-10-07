@@ -1,0 +1,21 @@
+5-5 Split pure-func: basic params, no I/O
+    invariant: parts sum to total
+    params: (total int64, parts int), results: ([]int64)
+7-7 SplitFees pure-func: basic params, no I/O
+    invariant: parts sum to total
+    params: (fees int, ways int), results: ([]int)
+9-9 WeekRange pure-func: basic params, no I/O
+    invariant: end not before start
+    params: (day time.Time), results: (time.Time, time.Time)
+11-11 Period pure-func: basic params, no I/O
+    invariant: end not before start
+    params: (day time.Time), results: (start time.Time, end time.Time)
+15-15 SplitFloat pure-func: basic params, no I/O
+    params: (total float64, parts int), results: ([]float64)
+17-17 Chunk pure-func: basic params, no I/O
+    params: (items int, size int), results: ([]int)
+19-19 Pair pure-func: basic params, no I/O
+    params: (day time.Time), results: (time.Time, time.Time)
+21-21 Times pure-func: basic params, no I/O
+    params: (day time.Time), results: (created time.Time, updated time.Time)
+hint 15 money: total is a float64; floats can't hold cents exactly, use integer cents or a decimal type

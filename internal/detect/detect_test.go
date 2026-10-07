@@ -59,6 +59,9 @@ func detectFixture(t *testing.T, path string) string {
 		if match.DecodesJSON {
 			fmt.Fprintln(&out, "    decodes JSON")
 		}
+		if match.Invariant != "" {
+			fmt.Fprintf(&out, "    invariant: %s\n", match.Invariant)
+		}
 		if len(match.Fields) > 0 {
 			fmt.Fprintf(&out, "    fields: %s\n", formatFields(match.Fields))
 		}

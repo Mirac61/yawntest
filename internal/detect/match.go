@@ -30,7 +30,8 @@ type Match struct {
 
 	// Validate*, IsValid* or Check*: the name promises that empty input is rejected.
 	NamedValidator bool
-	DecodesJSON    bool // http handlers that read a JSON request body
+	DecodesJSON    bool      // http handlers that read a JSON request body
+	Invariant      Invariant // pure funcs: an extra property the fuzz test checks
 }
 
 func (m Match) Symbol() string {
