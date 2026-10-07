@@ -107,6 +107,25 @@ import (
 {{end}})
 {{.Body}}`))
 
+// noPanic is pasted into every test: one panic then fails only its own test and the
+// rest of the package still runs. A shared helper func would clash between lazytest files.
+func noPanic(note string) string {
+	report := `t.Errorf("panic: %v", r)`
+	if note != "" {
+		report = `t.Errorf("panic: %v (` + note + `)", r)`
+	}
+	return "defer func() {\n\tif r := recover(); r != nil {\n\t\t" + report + "\n\t}\n}()"
+}
+
+// zeroReceiverNote explains panics of methods, which run on a zero-valued receiver.
+func zeroReceiverNote(name string) string {
+	receiver, _, isMethod := strings.Cut(name, ".")
+	if !isMethod {
+		return ""
+	}
+	return "the " + receiver + " is zero-valued; give it real dependencies if it needs them"
+}
+
 func (b *builder) render(pkg string) ([]byte, error) {
 	if b.err != nil {
 		return nil, fmt.Errorf("render test: %w", b.err)

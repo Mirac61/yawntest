@@ -27,6 +27,11 @@ func TestLazytest_ValidateEmail(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			err := ValidateEmail(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, err)
 		})
@@ -35,6 +40,11 @@ func TestLazytest_ValidateEmail(t *testing.T) {
 
 // lazytest: validation / empty input is rejected
 func TestLazytest_ValidateEmail_RejectsEmpty(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("panic: %v", r)
+		}
+	}()
 	if err := ValidateEmail(""); err == nil {
 		t.Error("ValidateEmail(\"\") returned nil, want an error for empty input")
 	}
@@ -55,6 +65,11 @@ func TestLazytest_IsValidAge(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			ok := IsValidAge(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, ok)
 		})
@@ -63,6 +78,11 @@ func TestLazytest_IsValidAge(t *testing.T) {
 
 // lazytest: validation / no panic on the zero value; expected result is up to you
 func TestLazytest_User_Validate_ZeroValue(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("panic: %v (the User is zero-valued; give it real dependencies if it needs them)", r)
+		}
+	}()
 	err := new(User).Validate()
 	t.Skipf("TODO(lazytest): is the zero value valid? got %v", err)
 }
@@ -79,6 +99,11 @@ func TestLazytest_ValidateUser(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			err := ValidateUser(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, err)
 		})
@@ -96,6 +121,11 @@ func TestLazytest_CheckSlug(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			ok := CheckSlug(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, ok)
 		})
@@ -120,6 +150,11 @@ func TestLazytest_IsEmail(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			ok := IsEmail(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, ok)
 		})
@@ -139,6 +174,11 @@ func TestLazytest_ValidateTags(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			err := ValidateTags(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, err)
 		})
@@ -163,6 +203,11 @@ func TestLazytest_IsValidDeadline(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			ok := IsValidDeadline(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, ok)
 		})
@@ -187,6 +232,11 @@ func TestLazytest_IsValidName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			ok := IsValidName(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, ok)
 		})
@@ -195,6 +245,11 @@ func TestLazytest_IsValidName(t *testing.T) {
 
 // lazytest: validation / empty input is rejected
 func TestLazytest_IsValidName_RejectsEmpty(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("panic: %v", r)
+		}
+	}()
 	if IsValidName("") {
 		t.Error("IsValidName(\"\") returned true, want false for empty input")
 	}

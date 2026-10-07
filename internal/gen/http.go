@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"strings"
 	"text/template"
 
 	"github.com/Mirac61/lazytest/internal/detect"
@@ -25,9 +24,7 @@ func TestLazytest_{{.TestName}}_BadInput(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-{{- if .IsMethod}}
-			// The receiver is zero-valued; give it real dependencies if the handler needs them.
-{{- end}}
+			{{.NoPanic}}
 			handler := {{.Handler}}
 			request := httptest.NewRequest(test.method, "/", strings.NewReader(test.body))
 			recorder := httptest.NewRecorder()
@@ -61,7 +58,7 @@ func (b *builder) httpHandler(match detect.Match) (summary string, ok bool) {
 	b.execute(httpTemplate, map[string]any{
 		"TestName":    testName(match.Name),
 		"Handler":     handler,
-		"IsMethod":    strings.Contains(match.Name, "."),
+		"NoPanic":     noPanic(zeroReceiverNote(match.Name)),
 		"DecodesJSON": match.DecodesJSON,
 	})
 

@@ -20,6 +20,11 @@ func FuzzLazytest_Add(f *testing.F) {
 	f.Add(math.MinInt, math.MinInt)
 
 	f.Fuzz(func(t *testing.T, a int, b int) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		got := Add(a, b)
 		again := Add(a, b)
 
@@ -41,6 +46,11 @@ func FuzzLazytest_Clamp(f *testing.F) {
 	f.Add(math.Inf(1), math.Inf(1), math.Inf(1))
 
 	f.Fuzz(func(t *testing.T, x float64, lo float64, hi float64) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		got := Clamp(x, lo, hi)
 		again := Clamp(x, lo, hi)
 
@@ -63,6 +73,11 @@ func FuzzLazytest_Join(f *testing.F) {
 	f.Add("' OR 1=1 --", "' OR 1=1 --")
 
 	f.Fuzz(func(t *testing.T, partsElem string, sep string) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		parts := []string{partsElem}
 		got := Join(parts, sep)
 		again := Join(parts, sep)
@@ -85,6 +100,11 @@ func FuzzLazytest_Sum(f *testing.F) {
 	f.Add(math.Inf(1))
 
 	f.Fuzz(func(t *testing.T, xsElem float64) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		xs := []float64{xsElem}
 		got := Sum(xs...)
 		again := Sum(xs...)
@@ -108,6 +128,11 @@ func FuzzLazytest_Days(f *testing.F) {
 	f.Add(int64(1792890000), int64(1792890000))
 
 	f.Fuzz(func(t *testing.T, startUnix int64, endUnix int64) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		start := time.Unix(startUnix, 0).UTC()
 		end := time.Unix(endUnix, 0).UTC()
 		got := Days(start, end)
@@ -131,6 +156,11 @@ func FuzzLazytest_Describe(f *testing.F) {
 	f.Add(byte(0), rune(1), int8(1), uint(0), float32(math.Inf(1)))
 
 	f.Fuzz(func(t *testing.T, b byte, r rune, small int8, u uint, arg4 float32) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		got := Describe(b, r, small, u, arg4)
 		again := Describe(b, r, small, u, arg4)
 
@@ -150,6 +180,11 @@ func FuzzLazytest_Divmod(f *testing.F) {
 	f.Add(math.MinInt, math.MinInt)
 
 	f.Fuzz(func(t *testing.T, a int, b int) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		got0, got1, got2 := Divmod(a, b)
 		again0, again1, again2 := Divmod(a, b)
 
@@ -175,6 +210,11 @@ func FuzzLazytest_Count(f *testing.F) {
 	f.Add([]byte(nil), math.MinInt)
 
 	f.Fuzz(func(t *testing.T, data []byte, arg1 int) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		got := Count(data, arg1)
 		again := Count(data, arg1)
 
@@ -198,6 +238,11 @@ func FuzzLazytest_Split(f *testing.F) {
 	f.Add(int64(999), 7)
 
 	f.Fuzz(func(t *testing.T, total int64, parts int) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		got := Split(total, parts)
 		again := Split(total, parts)
 
@@ -228,6 +273,11 @@ func FuzzLazytest_WeekRange(f *testing.F) {
 	f.Add(int64(1792890000))
 
 	f.Fuzz(func(t *testing.T, dayUnix int64) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("panic: %v", r)
+			}
+		}()
 		day := time.Unix(dayUnix, 0).UTC()
 		got0, got1 := WeekRange(day)
 		again0, again1 := WeekRange(day)

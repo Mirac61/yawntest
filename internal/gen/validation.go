@@ -23,6 +23,7 @@ func TestLazytest_{{.TestName}}(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			{{.NoPanic}}
 			{{.Result}} := {{.Call}}(test.input)
 			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, {{.Result}})
 		})
@@ -33,6 +34,7 @@ func TestLazytest_{{.TestName}}(t *testing.T) {
 var zeroReceiverTemplate = template.Must(template.New("zeroReceiver").Parse(`
 // lazytest: validation / no panic on the zero value; expected result is up to you
 func TestLazytest_{{.TestName}}_ZeroValue(t *testing.T) {
+	{{.NoPanic}}
 	{{.Result}} := {{.Call}}()
 	t.Skipf("TODO(lazytest): is the zero value valid? got %v", {{.Result}})
 }
@@ -41,6 +43,7 @@ func TestLazytest_{{.TestName}}_ZeroValue(t *testing.T) {
 var rejectsEmptyTemplate = template.Must(template.New("rejectsEmpty").Parse(`
 // lazytest: validation / empty input is rejected
 func TestLazytest_{{.TestName}}_RejectsEmpty(t *testing.T) {
+	{{.NoPanic}}
 {{- if eq .Result "err"}}
 	if err := {{.Call}}(""); err == nil {
 		t.Error("{{.Name}}(\"\") returned nil, want an error for empty input")
@@ -62,6 +65,7 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 		"TestName": testName(match.Name),
 		"Call":     callable(match.Name),
 		"Result":   resultVar(match.Results[0].Expr),
+		"NoPanic":  noPanic(zeroReceiverNote(match.Name)),
 	}
 
 	if len(match.Params) == 0 {

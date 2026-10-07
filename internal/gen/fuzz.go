@@ -16,6 +16,7 @@ func FuzzLazytest_{{.Func}}(f *testing.F) {
 {{- end}}
 
 	f.Fuzz(func(t *testing.T, {{.FuzzParams}}) {
+		{{.NoPanic}}
 {{- range .Setup}}
 		{{.}}
 {{- end}}
@@ -92,6 +93,7 @@ func (b *builder) fuzz(match detect.Match) string {
 
 	b.execute(fuzzTemplate, map[string]any{
 		"Func":       match.Name,
+		"NoPanic":    noPanic(""),
 		"Seeds":      seeds,
 		"FuzzParams": strings.Join(fuzzParams, ", "),
 		"Setup":      setup,

@@ -22,6 +22,11 @@ func TestLazytest_Health_BadInput(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
 			handler := Health
 			request := httptest.NewRequest(test.method, "/", strings.NewReader(test.body))
 			recorder := httptest.NewRecorder()
@@ -54,7 +59,11 @@ func TestLazytest_Server_CreateTask_BadInput(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// The receiver is zero-valued; give it real dependencies if the handler needs them.
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v (the Server is zero-valued; give it real dependencies if it needs them)", r)
+				}
+			}()
 			handler := new(Server).CreateTask
 			request := httptest.NewRequest(test.method, "/", strings.NewReader(test.body))
 			recorder := httptest.NewRecorder()
@@ -85,7 +94,11 @@ func TestLazytest_Server_handleList_BadInput(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// The receiver is zero-valued; give it real dependencies if the handler needs them.
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v (the Server is zero-valued; give it real dependencies if it needs them)", r)
+				}
+			}()
 			handler := new(Server).handleList()
 			request := httptest.NewRequest(test.method, "/", strings.NewReader(test.body))
 			recorder := httptest.NewRecorder()
