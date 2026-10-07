@@ -12,7 +12,6 @@ const (
 )
 
 type Match struct {
-	File    string
 	Line    int
 	Name    string // Func, Type.Method or Type
 	Pattern Pattern

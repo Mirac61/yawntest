@@ -12,13 +12,21 @@ import (
 //   - Generated: lives in a "Code generated ... DO NOT EDIT." file
 //   - Vendored: lives under vendor/
 func TestUntestedReportsOnlyUncoveredSymbols(t *testing.T) {
-	matches, err := Untested("testdata")
+	files, err := Untested("testdata")
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
+	if len(files) != 1 {
+		t.Fatalf("got %d files, want 1", len(files))
+	}
+
+	file := files[0]
+	if got, want := file.Package, "pkg"; got != want {
+		t.Errorf("Package = %q, want %q", got, want)
+	}
 
 	var names []string
-	for _, match := range matches {
+	for _, match := range file.Matches {
 		names = append(names, match.Name)
 	}
 	if want := []string{"Untested"}; !slices.Equal(names, want) {

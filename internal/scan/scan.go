@@ -11,11 +11,17 @@ import (
 	"github.com/Mirac61/lazytest/internal/detect"
 )
 
+type File struct {
+	Path    string
+	Package string
+	Matches []detect.Match
+}
+
 type identSet map[string]bool
 
-func Untested(root string) ([]detect.Match, error) {
+func Untested(root string) ([]File, error) {
 	fset := token.NewFileSet()
-	var matches []detect.Match
+	var files []File
 	testIdentsByDir := map[string]identSet{}
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -45,7 +51,11 @@ func Untested(root string) ([]detect.Match, error) {
 			}
 			collectIdents(file, testIdentsByDir[dir])
 		case !ast.IsGenerated(file):
-			matches = append(matches, detect.File(fset, file)...)
+			files = append(files, File{
+				Path:    path,
+				Package: file.Name.Name,
+				Matches: detect.File(fset, file),
+			})
 		}
 		return nil
 	})
@@ -53,7 +63,7 @@ func Untested(root string) ([]detect.Match, error) {
 		return nil, err
 	}
 
-	return withoutTested(matches, testIdentsByDir), nil
+	return withoutTested(files, testIdentsByDir), nil
 }
 
 func skipDir(name string) bool {
@@ -73,12 +83,21 @@ func collectIdents(file *ast.File, idents identSet) {
 }
 
 // ponytail: any name match counts as tested; coverage (M4) is precise.
-func withoutTested(matches []detect.Match, testIdentsByDir map[string]identSet) []detect.Match {
-	var untested []detect.Match
-	for _, match := range matches {
-		testIdents := testIdentsByDir[filepath.Dir(match.File)]
-		if !testIdents[match.Symbol()] {
-			untested = append(untested, match)
+func withoutTested(files []File, testIdentsByDir map[string]identSet) []File {
+	var untested []File
+	for _, file := range files {
+		testIdents := testIdentsByDir[filepath.Dir(file.Path)]
+
+		var matches []detect.Match
+		for _, match := range file.Matches {
+			if !testIdents[match.Symbol()] {
+				matches = append(matches, match)
+			}
+		}
+
+		if len(matches) > 0 {
+			file.Matches = matches
+			untested = append(untested, file)
 		}
 	}
 	return untested

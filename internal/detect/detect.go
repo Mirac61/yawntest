@@ -50,10 +50,8 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 }
 
 func newMatch(fset *token.FileSet, node ast.Node, name string, pattern Pattern, reason string) Match {
-	position := fset.Position(node.Pos())
 	return Match{
-		File:    position.Filename,
-		Line:    position.Line,
+		Line:    fset.Position(node.Pos()).Line,
 		Name:    name,
 		Pattern: pattern,
 		Reason:  reason,

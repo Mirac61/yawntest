@@ -5,30 +5,29 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/lazytest/internal/scan"
 )
 
-func Text(w io.Writer, matches []detect.Match) error {
-	if len(matches) == 0 {
+func Text(w io.Writer, files []scan.File) error {
+	if len(files) == 0 {
 		_, err := fmt.Fprintln(w, "Nothing to do.")
 		return err
 	}
 
 	table := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fileCount := 0
-	for i, match := range matches {
-		isNewFile := i == 0 || matches[i-1].File != match.File
-		if isNewFile {
-			fmt.Fprintln(table, match.File)
-			fileCount++
+	matchCount := 0
+	for _, file := range files {
+		fmt.Fprintln(table, file.Path)
+		for _, match := range file.Matches {
+			fmt.Fprintf(table, "  %s\t%s\tline %d\t%s\n", match.Name, match.Pattern, match.Line, match.Reason)
+			matchCount++
 		}
-		fmt.Fprintf(table, "  %s\t%s\tline %d\t%s\n", match.Name, match.Pattern, match.Line, match.Reason)
 	}
 	if err := table.Flush(); err != nil {
 		return err
 	}
 
-	_, err := fmt.Fprintf(w, "\n%s in %s.\n", plural(len(matches), "untested candidate"), plural(fileCount, "file"))
+	_, err := fmt.Fprintf(w, "\n%s in %s.\n", plural(matchCount, "untested candidate"), plural(len(files), "file"))
 	return err
 }
 

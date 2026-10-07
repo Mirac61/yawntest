@@ -28,16 +28,16 @@ func main() {
 		os.Exit(exitError)
 	}
 
-	matches, err := scan.Untested(rootArg())
+	files, err := scan.Untested(rootArg())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "lazytest:", err)
 		os.Exit(exitError)
 	}
-	if err := report.Text(os.Stdout, matches); err != nil {
+	if err := report.Text(os.Stdout, files); err != nil {
 		fmt.Fprintln(os.Stderr, "lazytest: write report:", err)
 		os.Exit(exitError)
 	}
-	if len(matches) > 0 {
+	if len(files) > 0 {
 		os.Exit(exitMissingTests)
 	}
 }

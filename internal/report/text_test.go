@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/lazytest/internal/scan"
 )
 
 func TestText(t *testing.T) {
 	tests := []struct {
-		name    string
-		matches []detect.Match
-		want    string
+		name  string
+		files []scan.File
+		want  string
 	}{
 		{
 			name: "nothing found",
@@ -19,8 +20,10 @@ func TestText(t *testing.T) {
 		},
 		{
 			name: "one match",
-			matches: []detect.Match{
-				{File: "api/tasks.go", Line: 12, Name: "CreateTask", Pattern: detect.PatternHTTPHandler, Reason: "handler signature"},
+			files: []scan.File{
+				{Path: "api/tasks.go", Matches: []detect.Match{
+					{Line: 12, Name: "CreateTask", Pattern: detect.PatternHTTPHandler, Reason: "handler signature"},
+				}},
 			},
 			want: "api/tasks.go\n" +
 				"  CreateTask  http-handler  line 12  handler signature\n" +
@@ -28,10 +31,14 @@ func TestText(t *testing.T) {
 		},
 		{
 			name: "groups by file and aligns columns",
-			matches: []detect.Match{
-				{File: "a.go", Line: 3, Name: "Task", Pattern: detect.PatternJSONRoundtrip, Reason: "has json tags"},
-				{File: "a.go", Line: 10, Name: "Add", Pattern: detect.PatternPureFunc, Reason: "basic params, no I/O"},
-				{File: "b.go", Line: 1, Name: "Check", Pattern: detect.PatternValidation, Reason: "name Check*, returns bool"},
+			files: []scan.File{
+				{Path: "a.go", Matches: []detect.Match{
+					{Line: 3, Name: "Task", Pattern: detect.PatternJSONRoundtrip, Reason: "has json tags"},
+					{Line: 10, Name: "Add", Pattern: detect.PatternPureFunc, Reason: "basic params, no I/O"},
+				}},
+				{Path: "b.go", Matches: []detect.Match{
+					{Line: 1, Name: "Check", Pattern: detect.PatternValidation, Reason: "name Check*, returns bool"},
+				}},
 			},
 			want: "a.go\n" +
 				"  Task  json-roundtrip  line 3   has json tags\n" +
@@ -45,7 +52,7 @@ func TestText(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var out strings.Builder
-			if err := Text(&out, test.matches); err != nil {
+			if err := Text(&out, test.files); err != nil {
 				t.Fatalf("write report: %v", err)
 			}
 			if got := out.String(); got != test.want {
