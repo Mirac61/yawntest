@@ -1,9 +1,9 @@
-12 Health http-handler: handler signature
+12-12 Health http-handler: handler signature
     params: (w http.ResponseWriter?, r *http.Request?), results: ()
-14 Server.CreateTask http-handler: handler signature, decodes JSON body
+14-19 Server.CreateTask http-handler: handler signature, decodes JSON body
     decodes JSON
     params: (w http.ResponseWriter?, r *http.Request?), results: ()
-21 Server.handleList http-handler: returns http.HandlerFunc
+21-23 Server.handleList http-handler: returns http.HandlerFunc
     params: (), results: (http.HandlerFunc?)
-25 aliased http-handler: handler signature
+25-25 aliased http-handler: handler signature
     params: (w nethttp.ResponseWriter?, r *nethttp.Request?), results: ()

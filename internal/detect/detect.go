@@ -63,6 +63,7 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 func newMatch(fset *token.FileSet, node ast.Node, name string, pattern Pattern, reason string) Match {
 	return Match{
 		Line:    fset.Position(node.Pos()).Line,
+		EndLine: fset.Position(node.End()).Line,
 		Name:    name,
 		Pattern: pattern,
 		Reason:  reason,

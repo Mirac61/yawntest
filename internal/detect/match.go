@@ -19,6 +19,7 @@ type Field struct {
 
 type Match struct {
 	Line    int
+	EndLine int
 	Name    string // Func, Type.Method or Type
 	Pattern Pattern
 	Reason  string
