@@ -1,0 +1,5 @@
+12-12 Charge pure-func: basic params, no I/O
+    params: (amount float32, rate float64), results: (float64)
+hint 5 money: UnitPrice is a float64; floats can't hold cents exactly, use integer cents or a decimal type
+hint 12 money: amount is a float32; floats can't hold cents exactly, use integer cents or a decimal type
+hint 17 money: defaultBalance is a float64; floats can't hold cents exactly, use integer cents or a decimal type

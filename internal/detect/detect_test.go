@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -65,6 +66,9 @@ func detectFixture(t *testing.T, path string) string {
 			fmt.Fprintf(&out, "    params: %s, results: %s\n", formatFields(match.Params), formatFields(match.Results))
 		}
 	}
+	for _, hint := range Hints(fset, file) {
+		fmt.Fprintf(&out, "hint %d %s: %s\n", hint.Line, hint.Domain, hint.Message)
+	}
 	return out.String()
 }
 
@@ -117,6 +121,27 @@ func TestValidationPrefix(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if got := validationPrefix(test.name); got != test.want {
 				t.Errorf("validationPrefix(%q) = %q, want %q", test.name, got, test.want)
+			}
+		})
+	}
+}
+
+func TestWords(t *testing.T) {
+	tests := []struct {
+		name string
+		want []string
+	}{
+		{name: "unitPrice", want: []string{"unit", "price"}},
+		{name: "HTTPServer", want: []string{"http", "server"}},
+		{name: "MAX_FEE", want: []string{"max", "fee"}},
+		{name: "userID2Token", want: []string{"user", "id2", "token"}},
+		{name: "feedback", want: []string{"feedback"}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := words(test.name); !slices.Equal(got, test.want) {
+				t.Errorf("words(%q) = %v, want %v", test.name, got, test.want)
 			}
 		})
 	}
