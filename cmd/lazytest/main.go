@@ -26,12 +26,17 @@ type options struct {
 	force    bool
 	runTests bool
 	changed  bool
+	json     bool
 }
 
 func main() {
 	opts := parseFlags()
 	result := collect(opts)
-	printText(opts, result)
+	if opts.json {
+		mustReport(report.JSON(os.Stdout, result))
+	} else {
+		printText(opts, result)
+	}
 	if result.HasProblems() {
 		os.Exit(exitProblems)
 	}
@@ -42,13 +47,21 @@ func parseFlags() options {
 	force := flag.Bool("force", false, "regenerate existing lazytest files")
 	runTests := flag.Bool("run", false, "run the generated tests afterwards and report failures as findings")
 	changed := flag.Bool("changed", false, "only look at code changed since the last commit")
+	jsonOutput := flag.Bool("json", false, "print the result as JSON")
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: lazytest [--check] [--force] [--run] [--changed] [path]")
+		fmt.Fprintln(os.Stderr, "usage: lazytest [--check] [--force] [--run] [--changed] [--json] [path]")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
-	return options{root: rootArg(), check: *check, force: *force, runTests: *runTests, changed: *changed}
+	return options{
+		root:     rootArg(),
+		check:    *check,
+		force:    *force,
+		runTests: *runTests,
+		changed:  *changed,
+		json:     *jsonOutput,
+	}
 }
 
 func collect(opts options) report.Result {
