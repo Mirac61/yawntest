@@ -38,28 +38,27 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-// Copies each fixture with its generated tests into a fresh module and runs go vet and go test there.
+// Puts every fixture with its generated tests into one package, like a real project with
+// several lazytest files side by side, and runs go vet and go test there.
 func TestGeneratedCodeCompilesAndPasses(t *testing.T) {
 	if testing.Short() {
 		t.Skip("runs the go tool")
 	}
 
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "go.mod"), []byte("module fixture\n\ngo 1.22\n"))
 	for _, fixture := range fixtures(t) {
-		t.Run(filepath.Base(fixture), func(t *testing.T) {
-			dir := t.TempDir()
-			writeFile(t, filepath.Join(dir, "go.mod"), []byte("module fixture\n\ngo 1.22\n"))
-
-			source, err := os.ReadFile(fixture)
-			if err != nil {
-				t.Fatalf("read fixture: %v", err)
-			}
-			writeFile(t, filepath.Join(dir, "fixture.go"), source)
-			writeFile(t, filepath.Join(dir, "fixture_lazytest_test.go"), generate(t, fixture))
-
-			runGo(t, dir, "vet", ".")
-			runGo(t, dir, "test", ".")
-		})
+		source, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		name := filepath.Base(fixture)
+		writeFile(t, filepath.Join(dir, name), source)
+		writeFile(t, filepath.Join(dir, TestPath(name)), generate(t, fixture))
 	}
+
+	runGo(t, dir, "vet", ".")
+	runGo(t, dir, "test", ".")
 }
 
 func TestTestPath(t *testing.T) {

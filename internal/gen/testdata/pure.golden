@@ -22,7 +22,9 @@ func FuzzLazytest_Add(f *testing.F) {
 	f.Fuzz(func(t *testing.T, a int, b int) {
 		got := Add(a, b)
 		again := Add(a, b)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Add(%v, %v) is not deterministic: got %v, then %v", a, b, got, again)
 		}
 	})
@@ -41,7 +43,9 @@ func FuzzLazytest_Clamp(f *testing.F) {
 	f.Fuzz(func(t *testing.T, x float64, lo float64, hi float64) {
 		got := Clamp(x, lo, hi)
 		again := Clamp(x, lo, hi)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Clamp(%v, %v, %v) is not deterministic: got %v, then %v", x, lo, hi, got, again)
 		}
 	})
@@ -62,7 +66,9 @@ func FuzzLazytest_Join(f *testing.F) {
 		parts := []string{partsElem}
 		got := Join(parts, sep)
 		again := Join(parts, sep)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Join(%v, %v) is not deterministic: got %v, then %v", partsElem, sep, got, again)
 		}
 	})
@@ -82,7 +88,9 @@ func FuzzLazytest_Sum(f *testing.F) {
 		xs := []float64{xsElem}
 		got := Sum(xs...)
 		again := Sum(xs...)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Sum(%v) is not deterministic: got %v, then %v", xsElem, got, again)
 		}
 	})
@@ -104,7 +112,9 @@ func FuzzLazytest_Days(f *testing.F) {
 		end := time.Unix(endUnix, 0).UTC()
 		got := Days(start, end)
 		again := Days(start, end)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Days(%v, %v) is not deterministic: got %v, then %v", startUnix, endUnix, got, again)
 		}
 	})
@@ -123,7 +133,9 @@ func FuzzLazytest_Describe(f *testing.F) {
 	f.Fuzz(func(t *testing.T, b byte, r rune, small int8, u uint, arg4 float32) {
 		got := Describe(b, r, small, u, arg4)
 		again := Describe(b, r, small, u, arg4)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Describe(%v, %v, %v, %v, %v) is not deterministic: got %v, then %v", b, r, small, u, arg4, got, again)
 		}
 	})
@@ -140,13 +152,15 @@ func FuzzLazytest_Divmod(f *testing.F) {
 	f.Fuzz(func(t *testing.T, a int, b int) {
 		got0, got1, got2 := Divmod(a, b)
 		again0, again1, again2 := Divmod(a, b)
-		if !lazytestSame(got0, again0) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got0, again0) && fmt.Sprint(got0) != fmt.Sprint(again0) {
 			t.Errorf("Divmod(%v, %v) is not deterministic: got %v, then %v", a, b, got0, again0)
 		}
-		if !lazytestSame(got1, again1) {
+		if !reflect.DeepEqual(got1, again1) && fmt.Sprint(got1) != fmt.Sprint(again1) {
 			t.Errorf("Divmod(%v, %v) is not deterministic: got %v, then %v", a, b, got1, again1)
 		}
-		if !lazytestSame(got2, again2) {
+		if !reflect.DeepEqual(got2, again2) && fmt.Sprint(got2) != fmt.Sprint(again2) {
 			t.Errorf("Divmod(%v, %v) is not deterministic: got %v, then %v", a, b, got2, again2)
 		}
 	})
@@ -163,7 +177,9 @@ func FuzzLazytest_Count(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte, arg1 int) {
 		got := Count(data, arg1)
 		again := Count(data, arg1)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Count(%v, %v) is not deterministic: got %v, then %v", data, arg1, got, again)
 		}
 	})
@@ -184,7 +200,9 @@ func FuzzLazytest_Split(f *testing.F) {
 	f.Fuzz(func(t *testing.T, total int64, parts int) {
 		got := Split(total, parts)
 		again := Split(total, parts)
-		if !lazytestSame(got, again) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got, again) && fmt.Sprint(got) != fmt.Sprint(again) {
 			t.Errorf("Split(%v, %v) is not deterministic: got %v, then %v", total, parts, got, again)
 		}
 
@@ -213,10 +231,12 @@ func FuzzLazytest_WeekRange(f *testing.F) {
 		day := time.Unix(dayUnix, 0).UTC()
 		got0, got1 := WeekRange(day)
 		again0, again1 := WeekRange(day)
-		if !lazytestSame(got0, again0) {
+
+		// NaN never equals itself, so results that print the same count as equal.
+		if !reflect.DeepEqual(got0, again0) && fmt.Sprint(got0) != fmt.Sprint(again0) {
 			t.Errorf("WeekRange(%v) is not deterministic: got %v, then %v", dayUnix, got0, again0)
 		}
-		if !lazytestSame(got1, again1) {
+		if !reflect.DeepEqual(got1, again1) && fmt.Sprint(got1) != fmt.Sprint(again1) {
 			t.Errorf("WeekRange(%v) is not deterministic: got %v, then %v", dayUnix, got1, again1)
 		}
 
@@ -224,9 +244,4 @@ func FuzzLazytest_WeekRange(f *testing.F) {
 			t.Errorf("WeekRange(%v) ends at %v, before its start %v", dayUnix, got1, got0)
 		}
 	})
-}
-
-// lazytestSame is reflect.DeepEqual, except that NaN equals NaN.
-func lazytestSame(a, b any) bool {
-	return reflect.DeepEqual(a, b) || fmt.Sprintf("%#v", a) == fmt.Sprintf("%#v", b)
 }

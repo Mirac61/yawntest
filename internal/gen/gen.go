@@ -52,10 +52,9 @@ func File(pkg string, matches []detect.Match) (Output, error) {
 }
 
 type builder struct {
-	imports   map[string]bool
-	body      bytes.Buffer
-	needsSame bool  // a fuzz test uses the lazytestSame helper
-	err       error // first template error, reported by render
+	imports map[string]bool
+	body    bytes.Buffer
+	err     error // first template error, reported by render
 }
 
 func (b *builder) add(match detect.Match) (summary string, ok bool) {
@@ -109,9 +108,6 @@ import (
 {{.Body}}`))
 
 func (b *builder) render(pkg string) ([]byte, error) {
-	if b.needsSame {
-		b.execute(sameTemplate, nil)
-	}
 	if b.err != nil {
 		return nil, fmt.Errorf("render test: %w", b.err)
 	}

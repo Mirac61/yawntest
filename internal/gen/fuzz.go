@@ -21,8 +21,10 @@ func FuzzLazytest_{{.Func}}(f *testing.F) {
 {{- end}}
 		{{.Got}} := {{.Call}}
 		{{.Again}} := {{.Call}}
+
+		// NaN never equals itself, so results that print the same count as equal.
 {{- range .Compare}}
-		if !lazytestSame({{.Got}}, {{.Again}}) {
+		if !reflect.DeepEqual({{.Got}}, {{.Again}}) && fmt.Sprint({{.Got}}) != fmt.Sprint({{.Again}}) {
 			t.Errorf("{{$.Func}}({{$.ArgFormat}}) is not deterministic: got %v, then %v", {{$.Args}}, {{.Got}}, {{.Again}})
 		}
 {{- end}}
@@ -46,13 +48,6 @@ func FuzzLazytest_{{.Func}}(f *testing.F) {
 }
 `))
 
-var sameTemplate = template.Must(template.New("same").Parse(`
-// lazytestSame is reflect.DeepEqual, except that NaN equals NaN.
-func lazytestSame(a, b any) bool {
-	return reflect.DeepEqual(a, b) || fmt.Sprintf("%#v", a) == fmt.Sprintf("%#v", b)
-}
-`))
-
 // Names a fuzz arg must not take: the closure's own names and the packages it uses.
 var reservedNames = map[string]bool{
 	"_": true, "t": true, "f": true, "got": true, "again": true,
@@ -70,7 +65,6 @@ type fuzzArg struct {
 
 func (b *builder) fuzz(match detect.Match) string {
 	b.use("testing", "reflect", "fmt")
-	b.needsSame = true
 
 	var args []fuzzArg
 	for i, param := range match.Params {
