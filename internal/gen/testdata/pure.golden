@@ -165,6 +165,59 @@ func FuzzLazytest_Count(f *testing.F) {
 	})
 }
 
+// lazytest: pure-func / no panic, deterministic, parts sum to total
+func FuzzLazytest_Split(f *testing.F) {
+	f.Add(int64(0), 0)
+	f.Add(int64(1), 1)
+	f.Add(int64(-1), -1)
+	f.Add(int64(math.MaxInt64), math.MaxInt)
+	f.Add(int64(math.MinInt64), math.MinInt)
+	f.Add(int64(100), 3)
+	f.Add(int64(101), 2)
+	f.Add(int64(1), 3)
+	f.Add(int64(999), 7)
+
+	f.Fuzz(func(t *testing.T, total int64, parts int) {
+		got := Split(total, parts)
+		again := Split(total, parts)
+		if !lazytestSame(got, again) {
+			t.Errorf("Split(%v, %v) is not deterministic: got %v, then %v", total, parts, got, again)
+		}
+
+		var sum int64
+		for _, part := range got {
+			sum += part
+		}
+		if len(got) > 0 && sum != total {
+			t.Errorf("Split(%v, %v) parts add up to %v, want the total %v", total, parts, sum, total)
+		}
+	})
+}
+
+// lazytest: pure-func / no panic, deterministic, end not before start
+func FuzzLazytest_WeekRange(f *testing.F) {
+	f.Add(int64(0))
+	f.Add(int64(1709208000))
+	f.Add(int64(253402300799))
+	f.Add(int64(-1))
+
+	f.Fuzz(func(t *testing.T, dayUnix int64) {
+		day := time.Unix(dayUnix, 0).UTC()
+		got0, got1 := WeekRange(day)
+		again0, again1 := WeekRange(day)
+		if !lazytestSame(got0, again0) {
+			t.Errorf("WeekRange(%v) is not deterministic: got %v, then %v", dayUnix, got0, again0)
+		}
+		if !lazytestSame(got1, again1) {
+			t.Errorf("WeekRange(%v) is not deterministic: got %v, then %v", dayUnix, got1, again1)
+		}
+
+		if got1.Before(got0) {
+			t.Errorf("WeekRange(%v) ends at %v, before its start %v", dayUnix, got1, got0)
+		}
+	})
+}
+
 // lazytestSame is reflect.DeepEqual, except that NaN equals NaN.
 func lazytestSame(a, b any) bool {
 	return reflect.DeepEqual(a, b) || fmt.Sprintf("%#v", a) == fmt.Sprintf("%#v", b)

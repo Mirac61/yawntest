@@ -61,21 +61,26 @@ func (b *builder) edgeCases(typ string) []edgeCase {
 		return stringCases
 	}
 
-	needsConversion := typ != "bool" && typ != "int" && typ != "float64" && typ != "[]byte"
 	var cases []edgeCase
 	for _, seed := range untypedSeeds[typ] {
 		if strings.Contains(seed, "math.") {
 			b.use("math")
 		}
-
-		value := seed
-		if needsConversion {
-			value = typ + "(" + seed + ")"
-		}
-		cases = append(cases, edgeCase{Name: seed, Value: value})
+		cases = append(cases, edgeCase{Name: seed, Value: typed(typ, seed)})
 	}
 	return cases
 }
+
+func typed(typ, constant string) string {
+	needsConversion := typ != "bool" && typ != "int" && typ != "float64" && typ != "[]byte"
+	if needsConversion {
+		return typ + "(" + constant + ")"
+	}
+	return constant
+}
+
+// Totals that don't divide evenly, so a split that drops the remainder fails.
+var splitSeeds = [][2]string{{"100", "3"}, {"101", "2"}, {"1", "3"}, {"999", "7"}}
 
 func values(cases []edgeCase) []string {
 	var result []string

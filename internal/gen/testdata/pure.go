@@ -38,3 +38,28 @@ func Divmod(a, b int) (int, int, error) {
 
 // The param named t must not shadow the fuzz closure's *testing.T.
 func Count(data []byte, t int) int { return len(data) + t }
+
+// Spreads the remainder over the first parts so they always add up to total.
+func Split(total int64, parts int) []int64 {
+	if parts <= 0 || parts > 1000 {
+		return nil
+	}
+
+	share, rest := total/int64(parts), total%int64(parts)
+	result := make([]int64, parts)
+	for i := range result {
+		result[i] = share
+		switch {
+		case int64(i) < rest:
+			result[i]++
+		case int64(i) < -rest:
+			result[i]--
+		}
+	}
+	return result
+}
+
+func WeekRange(day time.Time) (time.Time, time.Time) {
+	start := day.AddDate(0, 0, -int(day.Weekday()))
+	return start, start.AddDate(0, 0, 7)
+}

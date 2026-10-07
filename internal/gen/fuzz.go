@@ -9,7 +9,7 @@ import (
 )
 
 var fuzzTemplate = template.Must(template.New("fuzz").Parse(`
-// lazytest: pure-func / no panic, deterministic
+// lazytest: pure-func / no panic, deterministic{{if .Invariant}}, {{.Invariant}}{{end}}
 func FuzzLazytest_{{.Func}}(f *testing.F) {
 {{- range .Seeds}}
 	f.Add({{.}})
@@ -24,6 +24,22 @@ func FuzzLazytest_{{.Func}}(f *testing.F) {
 {{- range .Compare}}
 		if !lazytestSame({{.Got}}, {{.Again}}) {
 			t.Errorf("{{$.Func}}({{$.ArgFormat}}) is not deterministic: got %v, then %v", {{$.Args}}, {{.Got}}, {{.Again}})
+		}
+{{- end}}
+{{- if .PartsSumToTotal}}
+
+		var sum {{.TotalType}}
+		for _, part := range got {
+			sum += part
+		}
+		if len(got) > 0 && sum != {{.Total}} {
+			t.Errorf("{{.Func}}({{.ArgFormat}}) parts add up to %v, want the total %v", {{.Args}}, sum, {{.Total}})
+		}
+{{- end}}
+{{- if .EndNotBeforeStart}}
+
+		if got1.Before(got0) {
+			t.Errorf("{{.Func}}({{.ArgFormat}}) ends at %v, before its start %v", {{.Args}}, got1, got0)
 		}
 {{- end}}
 	})
@@ -62,6 +78,11 @@ func (b *builder) fuzz(match detect.Match) string {
 	}
 
 	seeds := seedRows(args)
+	if match.Invariant == detect.InvariantPartsSumToTotal && len(args) == 2 {
+		for _, pair := range splitSeeds {
+			seeds = append(seeds, typed(args[0].fuzzType, pair[0])+", "+typed(args[1].fuzzType, pair[1]))
+		}
+	}
 	got, again, compare := resultNames(len(match.Results))
 
 	var fuzzParams, setup, callArgs, argNames, formats []string
@@ -86,8 +107,19 @@ func (b *builder) fuzz(match detect.Match) string {
 		"Compare":    compare,
 		"ArgFormat":  strings.Join(formats, ", "),
 		"Args":       strings.Join(argNames, ", "),
+
+		"Invariant":         match.Invariant,
+		"PartsSumToTotal":   match.Invariant == detect.InvariantPartsSumToTotal,
+		"Total":             args[0].callArg,
+		"TotalType":         match.Params[0].Type,
+		"EndNotBeforeStart": match.Invariant == detect.InvariantEndNotBeforeStart,
 	})
-	return fmt.Sprintf("fuzz, %d seeds", len(seeds))
+
+	summary := fmt.Sprintf("fuzz, %d seeds", len(seeds))
+	if match.Invariant != "" {
+		summary += ", " + string(match.Invariant)
+	}
+	return summary
 }
 
 type sliceKind int
