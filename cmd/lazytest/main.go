@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	exitProblems = 1 // untested candidates with --check, findings with --run; lets CI fail
+	exitProblems = 1 // --check: untested candidates or error paths, --run: findings; lets CI fail
 	exitError    = 2
 )
 
@@ -50,13 +50,17 @@ func main() {
 
 func runCheck(opts options) {
 	files := must(scan.Untested(opts.root, true))
+	sourceDirs := must(scan.Dirs(opts.root, scan.IsSourceFile))
+	errorPaths := must(run.UntestedErrorPaths(sourceDirs))
 	if opts.changed {
 		changed := must(changes.SinceHEAD(opts.root))
 		files = must(changes.KeepChangedMatches(files, changed))
+		errorPaths = must(changes.KeepChangedErrorPaths(errorPaths, changed))
 	}
 
 	mustReport(report.Untested(os.Stdout, files))
-	if len(files) > 0 {
+	mustReport(report.ErrorPaths(os.Stdout, errorPaths))
+	if len(files) > 0 || len(errorPaths) > 0 {
 		os.Exit(exitProblems)
 	}
 }
