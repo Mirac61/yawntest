@@ -33,7 +33,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "lazytest:", err)
 		os.Exit(exitError)
 	}
-	if err := report.Text(os.Stdout, files); err != nil {
+	if err := report.Untested(os.Stdout, files); err != nil {
 		fmt.Fprintln(os.Stderr, "lazytest: write report:", err)
 		os.Exit(exitError)
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/Mirac61/lazytest/internal/scan"
 )
 
-func Text(w io.Writer, files []scan.File) error {
+func Untested(w io.Writer, files []scan.File) error {
 	if len(files) == 0 {
 		_, err := fmt.Fprintln(w, "Nothing to do.")
 		return err

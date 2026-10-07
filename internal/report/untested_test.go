@@ -8,7 +8,7 @@ import (
 	"github.com/Mirac61/lazytest/internal/scan"
 )
 
-func TestText(t *testing.T) {
+func TestUntested(t *testing.T) {
 	tests := []struct {
 		name  string
 		files []scan.File
@@ -52,7 +52,7 @@ func TestText(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var out strings.Builder
-			if err := Text(&out, test.files); err != nil {
+			if err := Untested(&out, test.files); err != nil {
 				t.Fatalf("write report: %v", err)
 			}
 			if got := out.String(); got != test.want {
