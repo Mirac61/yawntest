@@ -1,10 +1,10 @@
 11 Add pure-func: basic params, no I/O
-    params: (a int, b int), results: 1
+    params: (a int, b int), results: (int)
 13 Join pure-func: basic params, no I/O
-    params: (parts []string, sep string), results: 1
+    params: (parts []string, sep string), results: (string)
 15 Sum pure-func: basic params, no I/O
-    params: (xs ...float64), results: 1
+    params: (xs ...float64), results: (s float64)
 22 Days pure-func: basic params, no I/O
-    params: (start time.Time, end time.Time), results: 1
+    params: (start time.Time, end time.Time), results: (int)
 24 Label pure-func: basic params, no I/O
-    params: (n int), results: 1
+    params: (n int), results: (string)

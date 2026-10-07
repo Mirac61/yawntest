@@ -3,6 +3,7 @@ package detect
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 	"reflect"
 	"strconv"
 	"strings"
@@ -55,9 +56,10 @@ func encodedFields(structType *ast.StructType, imports importTable) []Field {
 		}
 
 		typ := typeName(field.Type, imports)
+		expr := types.ExprString(field.Type)
 		for _, fieldName := range field.Names {
 			if fieldName.IsExported() {
-				encoded = append(encoded, Field{Name: fieldName.Name, Type: typ})
+				encoded = append(encoded, Field{Name: fieldName.Name, Type: typ, Expr: expr})
 			}
 		}
 	}

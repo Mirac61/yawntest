@@ -1,6 +1,9 @@
 package detect
 
-import "go/ast"
+import (
+	"go/ast"
+	"go/types"
+)
 
 var basicTypes = map[string]bool{
 	"bool": true, "string": true, "byte": true, "rune": true,
@@ -33,11 +36,12 @@ func fields(list *ast.FieldList, imports importTable) []Field {
 	var result []Field
 	for _, field := range list.List {
 		typ := typeName(field.Type, imports)
+		expr := types.ExprString(field.Type)
 		if len(field.Names) == 0 {
-			result = append(result, Field{Type: typ})
+			result = append(result, Field{Type: typ, Expr: expr})
 		}
 		for _, name := range field.Names {
-			result = append(result, Field{Name: name.Name, Type: typ})
+			result = append(result, Field{Name: name.Name, Type: typ, Expr: expr})
 		}
 	}
 	return result

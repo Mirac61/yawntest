@@ -55,21 +55,22 @@ func detectFixture(t *testing.T, path string) string {
 		if len(match.Fields) > 0 {
 			fmt.Fprintf(&out, "    fields: %s\n", formatFields(match.Fields))
 		}
-		if len(match.Params) > 0 || match.Results > 0 {
-			fmt.Fprintf(&out, "    params: %s, results: %d\n", formatFields(match.Params), match.Results)
+		if len(match.Params) > 0 || len(match.Results) > 0 {
+			fmt.Fprintf(&out, "    params: %s, results: %s\n", formatFields(match.Params), formatFields(match.Results))
 		}
 	}
 	return out.String()
 }
 
+// Unsupported types get a "?" so the golden shows what gen can't fill.
 func formatFields(fields []Field) string {
 	var parts []string
 	for _, field := range fields {
-		typ := field.Type
-		if typ == "" {
-			typ = "?"
+		part := strings.TrimSpace(field.Name + " " + field.Expr)
+		if field.Type == "" {
+			part += "?"
 		}
-		parts = append(parts, strings.TrimSpace(field.Name+" "+typ))
+		parts = append(parts, part)
 	}
 	return "(" + strings.Join(parts, ", ") + ")"
 }

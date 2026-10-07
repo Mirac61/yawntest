@@ -93,7 +93,7 @@ func (b *builder) fuzz(match detect.Match) string {
 	}
 
 	seeds := seedRows(args)
-	got, again, compare := resultNames(match.Results)
+	got, again, compare := resultNames(len(match.Results))
 
 	var fuzzParams, setup, callArgs, argNames, formats []string
 	for _, arg := range args {

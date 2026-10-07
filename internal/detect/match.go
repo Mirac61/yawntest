@@ -11,10 +11,10 @@ const (
 	PatternValidation    Pattern = "validation"
 )
 
-// Type is a basic type, "time.Time", "[]T" or "...T". Empty means gen can't build a value.
 type Field struct {
 	Name string
-	Type string
+	Type string // basic type, "time.Time", "[]T" or "...T"; empty if gen can't build a value
+	Expr string // the type as written in the source, e.g. "*User" or "error"
 }
 
 type Match struct {
@@ -25,7 +25,7 @@ type Match struct {
 
 	Fields  []Field // structs: fields encoding/json writes
 	Params  []Field // funcs
-	Results int     // funcs
+	Results []Field // funcs
 }
 
 func (m Match) Symbol() string {

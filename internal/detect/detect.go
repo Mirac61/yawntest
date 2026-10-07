@@ -48,7 +48,7 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 
 		match := newMatch(fset, fn, funcName(fn), detector.pattern, reason)
 		match.Params = fields(fn.Type.Params, imports)
-		match.Results = len(fieldTypes(fn.Type.Results))
+		match.Results = fields(fn.Type.Results, imports)
 		return match, true
 	}
 	return Match{}, false
