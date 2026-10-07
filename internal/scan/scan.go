@@ -12,10 +12,11 @@ import (
 )
 
 type File struct {
-	Path    string
-	Package string
-	Matches []detect.Match
-	Hints   []detect.Hint
+	Path            string
+	Package         string
+	BuildConstraint string // e.g. "//go:build linux", empty if the file always builds
+	Matches         []detect.Match
+	Hints           []detect.Hint
 }
 
 type identSet map[string]bool
@@ -56,10 +57,11 @@ func Untested(root string, countLazytest bool) ([]File, error) {
 			collectIdents(file, testIdentsByDir[dir])
 		case !ast.IsGenerated(file):
 			files = append(files, File{
-				Path:    path,
-				Package: file.Name.Name,
-				Matches: detect.File(fset, file),
-				Hints:   detect.Hints(fset, file),
+				Path:            path,
+				Package:         file.Name.Name,
+				BuildConstraint: BuildConstraint(path, file),
+				Matches:         detect.File(fset, file),
+				Hints:           detect.Hints(fset, file),
 			})
 		}
 		return nil
