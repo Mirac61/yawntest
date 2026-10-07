@@ -11,6 +11,7 @@ import (
 //   - OnlyInLazytest: covered by a generated lazytest file
 //   - Generated: lives in a "Code generated ... DO NOT EDIT." file
 //   - Vendored: lives under vendor/
+//   - sub/, z.go: a subdir sorted between files, so Dirs must not list testdata twice
 func TestUntested(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -42,6 +43,30 @@ func TestUntested(t *testing.T) {
 			}
 			if !slices.Equal(names, test.want) {
 				t.Errorf("names = %v, want %v", names, test.want)
+			}
+		})
+	}
+}
+
+func TestDirs(t *testing.T) {
+	tests := []struct {
+		name string
+		keep func(string) bool
+		want []string
+	}{
+		{name: "lazytest files", keep: IsLazytestFile, want: []string{"testdata"}},
+		{name: "source files skip vendor", keep: IsSourceFile, want: []string{"testdata", "testdata/sub"}},
+		{name: "nothing", keep: func(string) bool { return false }, want: nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dirs, err := Dirs("testdata", test.keep)
+			if err != nil {
+				t.Fatalf("dirs: %v", err)
+			}
+			if !slices.Equal(dirs, test.want) {
+				t.Errorf("dirs = %v, want %v", dirs, test.want)
 			}
 		})
 	}

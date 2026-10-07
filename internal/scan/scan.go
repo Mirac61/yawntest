@@ -45,7 +45,7 @@ func Untested(root string, countLazytest bool) ([]File, error) {
 		}
 
 		switch {
-		case strings.HasSuffix(path, "_lazytest_test.go") && !countLazytest:
+		case IsLazytestFile(path) && !countLazytest:
 			return nil
 		case strings.HasSuffix(path, "_test.go"):
 			dir := filepath.Dir(path)
@@ -67,6 +67,39 @@ func Untested(root string, countLazytest bool) ([]File, error) {
 	}
 
 	return withoutTested(files, testIdentsByDir), nil
+}
+
+// Dirs returns every directory below root holding a file whose name passes keep.
+func Dirs(root string, keep func(fileName string) bool) ([]string, error) {
+	var dirs []string
+	found := map[string]bool{}
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			if path != root && skipDir(entry.Name()) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		dir := filepath.Dir(path)
+		if !found[dir] && keep(entry.Name()) {
+			found[dir] = true
+			dirs = append(dirs, dir)
+		}
+		return nil
+	})
+	return dirs, err
+}
+
+func IsLazytestFile(name string) bool {
+	return strings.HasSuffix(name, "_lazytest_test.go")
+}
+
+func IsSourceFile(name string) bool {
+	return strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go")
 }
 
 func skipDir(name string) bool {
