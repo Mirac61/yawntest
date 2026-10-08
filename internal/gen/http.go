@@ -3,7 +3,7 @@ package gen
 import (
 	"text/template"
 
-	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/detect"
 )
 
 var httpTemplate = template.Must(template.New("http").Parse(`

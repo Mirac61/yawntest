@@ -1,8 +1,8 @@
 package report
 
 import (
-	"github.com/Mirac61/lazytest/internal/run"
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/run"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 // Result is everything one lazytest run found, before it's printed as text or JSON.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/detect"
 )
 
 var validationTemplate = template.Must(template.New("validation").Parse(`

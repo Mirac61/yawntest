@@ -5,7 +5,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 // Hints prints nothing when there are none, they are advice on top of the check.

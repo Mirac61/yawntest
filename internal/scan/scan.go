@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Mirac61/lazytest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/detect"
 )
 
 type File struct {

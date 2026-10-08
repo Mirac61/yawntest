@@ -9,8 +9,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Mirac61/lazytest/internal/detect"
-	"github.com/Mirac61/lazytest/internal/run"
+	"github.com/Mirac61/yawntest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/run"
 )
 
 type Test struct {

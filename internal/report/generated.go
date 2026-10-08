@@ -5,7 +5,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/Mirac61/lazytest/internal/gen"
+	"github.com/Mirac61/yawntest/internal/gen"
 )
 
 type GeneratedFile struct {

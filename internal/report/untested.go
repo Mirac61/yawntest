@@ -5,7 +5,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 func Untested(w io.Writer, files []scan.File) error {

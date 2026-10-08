@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Mirac61/lazytest/internal/changes"
-	"github.com/Mirac61/lazytest/internal/gen"
-	"github.com/Mirac61/lazytest/internal/report"
-	"github.com/Mirac61/lazytest/internal/run"
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/changes"
+	"github.com/Mirac61/yawntest/internal/gen"
+	"github.com/Mirac61/yawntest/internal/report"
+	"github.com/Mirac61/yawntest/internal/run"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 const (

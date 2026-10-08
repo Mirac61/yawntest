@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Mirac61/lazytest/internal/detect"
-	"github.com/Mirac61/lazytest/internal/gen"
-	"github.com/Mirac61/lazytest/internal/run"
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/gen"
+	"github.com/Mirac61/yawntest/internal/run"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 func TestJSON(t *testing.T) {

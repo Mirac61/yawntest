@@ -59,7 +59,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Build
-        run: go build -o "$RUNNER_TEMP/lazytest" ./cmd/lazytest
+        run: go build -o "$RUNNER_TEMP/lazytest" ./cmd/yawntest
 
       # The example has planted bugs, so both runs must exit 1 with the output the README shows.
       - name: --check finds the candidates

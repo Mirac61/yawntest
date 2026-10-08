@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Mirac61/lazytest/internal/run"
+	"github.com/Mirac61/yawntest/internal/run"
 )
 
 func TestFindings(t *testing.T) {

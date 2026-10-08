@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Mirac61/lazytest/internal/detect"
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 var update = flag.Bool("update", false, "rewrite testdata/*.golden from the current output")

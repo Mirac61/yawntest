@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Mirac61/lazytest/internal/detect"
-	"github.com/Mirac61/lazytest/internal/gen"
+	"github.com/Mirac61/yawntest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/gen"
 )
 
 func TestGenerated(t *testing.T) {

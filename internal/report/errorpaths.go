@@ -5,7 +5,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/Mirac61/lazytest/internal/run"
+	"github.com/Mirac61/yawntest/internal/run"
 )
 
 func ErrorPaths(w io.Writer, paths []run.ErrorPath) error {

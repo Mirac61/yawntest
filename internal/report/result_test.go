@@ -3,9 +3,9 @@ package report
 import (
 	"testing"
 
-	"github.com/Mirac61/lazytest/internal/detect"
-	"github.com/Mirac61/lazytest/internal/run"
-	"github.com/Mirac61/lazytest/internal/scan"
+	"github.com/Mirac61/yawntest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/run"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 func TestHasProblems(t *testing.T) {
