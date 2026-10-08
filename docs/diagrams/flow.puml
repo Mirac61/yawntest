@@ -1,0 +1,57 @@
+@startuml flow
+title One lazytest run
+
+start
+:Parse flags;
+:**scan.Untested**
+walk the tree, parse every .go file;
+fork
+  :**detect.File**
+  pattern matches;
+fork again
+  :**detect.Hints**
+  money, dates, auth;
+fork again
+  :collect identifiers
+  of every *_test.go;
+end fork
+:drop matches a test file already mentions;
+
+if (--changed?) then (yes)
+  :**changes.SinceHEAD**
+  keep what changed since HEAD;
+endif
+
+if (--check?) then (yes)
+  :**run.UntestedErrorPaths**
+  go test -coverprofile per dir;
+else (no)
+  :**gen.File** per source file
+  templates + go/format;
+  :write foo_lazytest_test.go
+  (existing ones only with --force);
+  if (--run?) then (yes)
+    :**run.LazytestTests**
+    go test -json -run Lazytest per dir;
+  endif
+endif
+
+:collect everything in **report.Result**;
+if (--json?) then (yes)
+  :report.JSON;
+else (no)
+  :text report;
+endif
+
+if (Result.HasProblems?) then (yes)
+  :exit 1;
+else (no)
+  :exit 0;
+endif
+stop
+
+note right
+  Any error along the way
+  ends the run with exit 2.
+end note
+@enduml
