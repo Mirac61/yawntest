@@ -18,7 +18,7 @@ func TestHasProblems(t *testing.T) {
 		{name: "untested candidate", result: Result{Untested: []scan.File{{Matches: []detect.Match{{Name: "Add"}}}}}, want: true},
 		{name: "only hints", result: Result{Untested: []scan.File{{Hints: []detect.Hint{{Domain: "money"}}}}}, want: false},
 		{name: "error path", result: Result{ErrorPaths: []run.ErrorPath{{Line: 1}}}, want: true},
-		{name: "finding", result: Result{Findings: []run.Finding{{Test: "TestLazytest_Add"}}}, want: true},
+		{name: "finding", result: Result{Findings: []run.Finding{{Test: "TestYawntest_Add"}}}, want: true},
 		{name: "only missing setup", result: Result{Findings: []run.Finding{{NeedsSetup: true}}}, want: false},
 	}
 

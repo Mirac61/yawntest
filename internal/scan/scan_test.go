@@ -8,7 +8,7 @@ import (
 // testdata holds:
 //   - Tested: called from a_test.go
 //   - Untested: no test mentions it
-//   - OnlyInLazytest: covered by a generated lazytest file
+//   - OnlyInYawntest: covered by a generated yawntest file
 //   - Generated: lives in a "Code generated ... DO NOT EDIT." file
 //   - Vendored: lives under vendor/
 //   - sub/, z.go: a subdir sorted between files, so Dirs must not list testdata twice
@@ -16,16 +16,16 @@ import (
 func TestUntested(t *testing.T) {
 	tests := []struct {
 		name          string
-		countLazytest bool
+		countYawntest bool
 		want          []string
 	}{
-		{name: "lazytest files count as tests", countLazytest: true, want: []string{"Untested"}},
-		{name: "lazytest files ignored", countLazytest: false, want: []string{"Untested", "OnlyInLazytest"}},
+		{name: "yawntest files count as tests", countYawntest: true, want: []string{"Untested"}},
+		{name: "yawntest files ignored", countYawntest: false, want: []string{"Untested", "OnlyInYawntest"}},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			files, err := Untested("testdata", test.countLazytest)
+			files, err := Untested("testdata", test.countYawntest)
 			if err != nil {
 				t.Fatalf("scan: %v", err)
 			}
@@ -57,7 +57,7 @@ func TestDirs(t *testing.T) {
 		keep func(string) bool
 		want []string
 	}{
-		{name: "lazytest files", keep: IsLazytestFile, want: []string{"testdata"}},
+		{name: "yawntest files", keep: IsYawntestFile, want: []string{"testdata"}},
 		{name: "source files skip vendor", keep: IsSourceFile, want: []string{"testdata", "testdata/sub"}},
 		{name: "nothing", keep: func(string) bool { return false }, want: nil},
 	}

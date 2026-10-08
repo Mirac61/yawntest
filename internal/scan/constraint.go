@@ -8,7 +8,7 @@ import (
 )
 
 // BuildConstraint returns the //go:build line of a file, or one derived from a _GOOS or
-// _GOARCH file name, so a lazytest file can build under the same conditions as its source.
+// _GOARCH file name, so a yawntest file can build under the same conditions as its source.
 func BuildConstraint(path string, file *ast.File) string {
 	for _, group := range file.Comments {
 		if group.Pos() >= file.Package {

@@ -10,8 +10,8 @@ import (
 )
 
 var validationTemplate = template.Must(template.New("validation").Parse(`
-// lazytest: validation / no panic; expected results are up to you
-func TestLazytest_{{.TestName}}(t *testing.T) {
+// yawntest: validation / no panic; expected results are up to you
+func TestYawntest_{{.TestName}}(t *testing.T) {
 	tests := []struct {
 		name  string
 		input {{.InputType}}
@@ -25,24 +25,24 @@ func TestLazytest_{{.TestName}}(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			{{.NoPanic}}
 			{{.Result}} := {{.Call}}(test.input)
-			t.Skipf("TODO(lazytest): expected result for %s; got %v", test.name, {{.Result}})
+			t.Skipf("TODO(yawntest): expected result for %s; got %v", test.name, {{.Result}})
 		})
 	}
 }
 `))
 
 var zeroReceiverTemplate = template.Must(template.New("zeroReceiver").Parse(`
-// lazytest: validation / no panic on the zero value; expected result is up to you
-func TestLazytest_{{.TestName}}_ZeroValue(t *testing.T) {
+// yawntest: validation / no panic on the zero value; expected result is up to you
+func TestYawntest_{{.TestName}}_ZeroValue(t *testing.T) {
 	{{.NoPanic}}
 	{{.Result}} := {{.Call}}()
-	t.Skipf("TODO(lazytest): is the zero value valid? got %v", {{.Result}})
+	t.Skipf("TODO(yawntest): is the zero value valid? got %v", {{.Result}})
 }
 `))
 
 var rejectsEmptyTemplate = template.Must(template.New("rejectsEmpty").Parse(`
-// lazytest: validation / empty input is rejected
-func TestLazytest_{{.TestName}}_RejectsEmpty(t *testing.T) {
+// yawntest: validation / empty input is rejected
+func TestYawntest_{{.TestName}}_RejectsEmpty(t *testing.T) {
 	{{.NoPanic}}
 {{- if eq .Result "err"}}
 	if err := {{.Call}}(""); err == nil {

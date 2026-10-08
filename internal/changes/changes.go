@@ -135,7 +135,7 @@ func KeepChangedMatches(files []scan.File, changed map[string]File) ([]scan.File
 }
 
 // KeepChangedFiles keeps whole files with at least one changed match. Generation
-// rewrites a file's lazytest file as a unit, so dropping matches would drop their tests.
+// rewrites a file's yawntest file as a unit, so dropping matches would drop their tests.
 func KeepChangedFiles(files []scan.File, changed map[string]File) ([]scan.File, error) {
 	changedMatches, err := KeepChangedMatches(files, changed)
 	if err != nil {

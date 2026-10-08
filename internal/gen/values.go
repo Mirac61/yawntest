@@ -12,7 +12,7 @@ var intTypes = map[string]bool{
 func (b *builder) sample(typ string) string {
 	switch {
 	case typ == "string":
-		return `"lazytest"`
+		return `"yawntest"`
 	case typ == "bool":
 		return "true"
 	case typ == "float32", typ == "float64":

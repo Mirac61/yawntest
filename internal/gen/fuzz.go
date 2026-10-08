@@ -9,8 +9,8 @@ import (
 )
 
 var fuzzTemplate = template.Must(template.New("fuzz").Parse(`
-// lazytest: pure-func / no panic, deterministic{{if .Invariant}}, {{.Invariant}}{{end}}
-func FuzzLazytest_{{.Func}}(f *testing.F) {
+// yawntest: pure-func / no panic, deterministic{{if .Invariant}}, {{.Invariant}}{{end}}
+func FuzzYawntest_{{.Func}}(f *testing.F) {
 {{- range .Seeds}}
 	f.Add({{.}})
 {{- end}}

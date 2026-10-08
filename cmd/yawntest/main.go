@@ -44,12 +44,12 @@ func main() {
 
 func parseFlags() options {
 	check := flag.Bool("check", false, "report untested patterns without writing files")
-	force := flag.Bool("force", false, "regenerate existing lazytest files")
+	force := flag.Bool("force", false, "regenerate existing yawntest files")
 	runTests := flag.Bool("run", false, "run the generated tests afterwards and report failures as findings")
 	changed := flag.Bool("changed", false, "only look at code changed since the last commit")
 	jsonOutput := flag.Bool("json", false, "print the result as JSON")
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: lazytest [--check] [--force] [--run] [--changed] [--json] [path]")
+		fmt.Fprintln(os.Stderr, "usage: yawntest [--check] [--force] [--run] [--changed] [--json] [path]")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -71,8 +71,8 @@ func collect(opts options) report.Result {
 
 	result := report.Result{Generated: generate(opts)}
 	if opts.runTests {
-		dirs := must(scan.Dirs(opts.root, scan.IsLazytestFile))
-		result.Findings = must(run.LazytestTests(dirs))
+		dirs := must(scan.Dirs(opts.root, scan.IsYawntestFile))
+		result.Findings = must(run.YawntestTests(dirs))
 	}
 	return result
 }
@@ -103,7 +103,7 @@ func check(opts options) report.Result {
 	return report.Result{Untested: files, ErrorPaths: errorPaths}
 }
 
-// Without --force existing lazytest files count as tests, so only sources with new candidates show up.
+// Without --force existing yawntest files count as tests, so only sources with new candidates show up.
 func generate(opts options) []report.GeneratedFile {
 	files := must(scan.Untested(opts.root, !opts.force))
 	if opts.changed {
@@ -170,7 +170,7 @@ func mustReport(err error) {
 }
 
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "lazytest:", err)
+	fmt.Fprintln(os.Stderr, "yawntest:", err)
 	os.Exit(exitError)
 }
 

@@ -32,5 +32,5 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# lazytest output of the README example
-_example/**/*_lazytest_test.go
+# yawntest output of the README example
+_example/**/*_yawntest_test.go

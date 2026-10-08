@@ -5,7 +5,7 @@ import (
 	"github.com/Mirac61/yawntest/internal/scan"
 )
 
-// Result is everything one lazytest run found, before it's printed as text or JSON.
+// Result is everything one yawntest run found, before it's printed as text or JSON.
 type Result struct {
 	Untested   []scan.File // --check, with hints
 	ErrorPaths []run.ErrorPath

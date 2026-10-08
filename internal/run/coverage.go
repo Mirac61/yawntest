@@ -50,7 +50,7 @@ func (b coverBlock) contains(position token.Position) bool {
 
 // Failing tests still write a profile, so only a missing profile is an error.
 func coverProfile(dir string) ([]coverBlock, error) {
-	profile, err := os.CreateTemp("", "lazytest-*.cover")
+	profile, err := os.CreateTemp("", "yawntest-*.cover")
 	if err != nil {
 		return nil, err
 	}

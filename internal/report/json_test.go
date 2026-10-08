@@ -64,20 +64,20 @@ func TestJSON(t *testing.T) {
 			result: Result{
 				Generated: []GeneratedFile{{
 					Source:   "calc.go",
-					TestPath: "calc_lazytest_test.go",
+					TestPath: "calc_yawntest_test.go",
 					Written:  true,
 					Output: gen.Output{
 						Tests:   []gen.Test{{Match: detect.Match{Name: "Add", Pattern: detect.PatternPureFunc}, Summary: "fuzz, 5 seeds"}},
 						Skipped: []detect.Match{{Name: "NewHandler"}},
 					},
 				}},
-				Findings: []run.Finding{{Dir: ".", Test: "FuzzLazytest_Add/seed#3", Message: "panic: overflow"}},
+				Findings: []run.Finding{{Dir: ".", Test: "FuzzYawntest_Add/seed#3", Message: "panic: overflow"}},
 			},
 			want: `{
   "generated": [
     {
       "source": "calc.go",
-      "testFile": "calc_lazytest_test.go",
+      "testFile": "calc_yawntest_test.go",
       "written": true,
       "tests": [
         {
@@ -94,7 +94,7 @@ func TestJSON(t *testing.T) {
   "findings": [
     {
       "dir": ".",
-      "test": "FuzzLazytest_Add/seed#3",
+      "test": "FuzzYawntest_Add/seed#3",
       "message": "panic: overflow"
     }
   ]

@@ -26,7 +26,7 @@ func TestGenerated(t *testing.T) {
 			name: "written file with a skipped candidate",
 			files: []GeneratedFile{{
 				Source:   "api/tasks.go",
-				TestPath: "api/tasks_lazytest_test.go",
+				TestPath: "api/tasks_yawntest_test.go",
 				Written:  true,
 				Output: gen.Output{
 					Tests: []gen.Test{
@@ -39,18 +39,18 @@ func TestGenerated(t *testing.T) {
 			want: "api/tasks.go\n" +
 				"  ✓ Task        json-roundtrip  1 test\n" +
 				"  ✓ Add         pure-func       fuzz, 5 seeds\n" +
-				"  · CreateTask  http-handler    skipped, needs inputs lazytest can't build\n" +
+				"  · CreateTask  http-handler    skipped, needs inputs yawntest can't build\n" +
 				"\nWrote 1 file with 2 tests, skipped 1 candidate.\n",
 		},
 		{
 			name: "existing file without --force",
 			files: []GeneratedFile{{
 				Source:   "a.go",
-				TestPath: "a_lazytest_test.go",
+				TestPath: "a_yawntest_test.go",
 				Output:   gen.Output{Tests: []gen.Test{{Match: add, Summary: "fuzz, 5 seeds"}}},
 			}},
 			want: "a.go\n" +
-				"  ! Add  pure-func  a_lazytest_test.go exists, rerun with --force\n" +
+				"  ! Add  pure-func  a_yawntest_test.go exists, rerun with --force\n" +
 				"\nWrote 0 files with 0 tests, skipped 0 candidates.\n",
 		},
 	}

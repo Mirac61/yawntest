@@ -7,8 +7,8 @@ import (
 )
 
 var httpTemplate = template.Must(template.New("http").Parse(`
-// lazytest: http-handler / bad input never gives 5xx{{if .DecodesJSON}}, invalid JSON gives 4xx{{end}}
-func TestLazytest_{{.TestName}}_BadInput(t *testing.T) {
+// yawntest: http-handler / bad input never gives 5xx{{if .DecodesJSON}}, invalid JSON gives 4xx{{end}}
+func TestYawntest_{{.TestName}}_BadInput(t *testing.T) {
 	tests := []struct {
 		name    string
 		method  string
@@ -43,7 +43,7 @@ func TestLazytest_{{.TestName}}_BadInput(t *testing.T) {
 }
 `))
 
-// Constructors with params are skipped: lazytest can't invent their dependencies.
+// Constructors with params are skipped: yawntest can't invent their dependencies.
 func (b *builder) httpHandler(match detect.Match) (summary string, ok bool) {
 	handler := callable(match.Name)
 	isConstructor := len(match.Results) == 1

@@ -21,8 +21,8 @@ type File struct {
 
 type identSet map[string]bool
 
-// Lazytest files count as tests only with countLazytest; generation rewrites them anyway.
-func Untested(root string, countLazytest bool) ([]File, error) {
+// Yawntest files count as tests only with countYawntest; generation rewrites them anyway.
+func Untested(root string, countYawntest bool) ([]File, error) {
 	fset := token.NewFileSet()
 	var files []File
 	testIdentsByDir := map[string]identSet{}
@@ -47,7 +47,7 @@ func Untested(root string, countLazytest bool) ([]File, error) {
 		}
 
 		switch {
-		case IsLazytestFile(path) && !countLazytest:
+		case IsYawntestFile(path) && !countYawntest:
 			return nil
 		case strings.HasSuffix(path, "_test.go"):
 			dir := filepath.Dir(path)
@@ -107,8 +107,8 @@ func Dirs(root string, keep func(fileName string) bool) ([]string, error) {
 	return dirs, err
 }
 
-func IsLazytestFile(name string) bool {
-	return strings.HasSuffix(name, "_lazytest_test.go")
+func IsYawntestFile(name string) bool {
+	return strings.HasSuffix(name, "_yawntest_test.go")
 }
 
 func IsSourceFile(name string) bool {

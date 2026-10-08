@@ -17,16 +17,16 @@ const ZeroReceiverNote = "is zero-valued; give it real dependencies if it needs 
 
 type Finding struct {
 	Dir        string
-	Test       string // e.g. TestLazytest_CreateTask_BadInput/invalid_json; empty if the package didn't build
+	Test       string // e.g. TestYawntest_CreateTask_BadInput/invalid_json; empty if the package didn't build
 	Message    string
 	NeedsSetup bool // a method panicked on its zero-valued receiver
 }
 
 // ponytail: one go test per dir, so nested modules work; batch by module if this gets slow.
-func LazytestTests(dirs []string) ([]Finding, error) {
+func YawntestTests(dirs []string) ([]Finding, error) {
 	var findings []Finding
 	for _, dir := range dirs {
-		dirFindings, err := lazytestTestsIn(dir)
+		dirFindings, err := yawntestTestsIn(dir)
 		if err != nil {
 			return nil, err
 		}
@@ -35,8 +35,8 @@ func LazytestTests(dirs []string) ([]Finding, error) {
 	return findings, nil
 }
 
-func lazytestTestsIn(dir string) ([]Finding, error) {
-	cmd := exec.Command("go", "test", "-json", "-run", "Lazytest", ".")
+func yawntestTestsIn(dir string) ([]Finding, error) {
+	cmd := exec.Command("go", "test", "-json", "-run", "Yawntest", ".")
 	cmd.Dir = dir
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

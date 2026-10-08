@@ -7,8 +7,8 @@ import (
 )
 
 var roundtripTemplate = template.Must(template.New("roundtrip").Parse(`
-// lazytest: json-roundtrip
-func TestLazytest_{{.TestName}}_JSONRoundtrip(t *testing.T) {
+// yawntest: json-roundtrip
+func TestYawntest_{{.TestName}}_JSONRoundtrip(t *testing.T) {
 	want := {{.Type}}{
 	{{- range .Fields}}
 		{{.Name}}: {{.Value}},

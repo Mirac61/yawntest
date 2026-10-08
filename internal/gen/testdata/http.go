@@ -30,7 +30,7 @@ func (s Server) handleList() http.HandlerFunc {
 	}
 }
 
-// Skipped: lazytest can't invent the prefix dependency.
+// Skipped: yawntest can't invent the prefix dependency.
 func NewHandler(prefix string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {}
 }

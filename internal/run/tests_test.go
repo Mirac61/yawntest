@@ -10,19 +10,19 @@ import (
 
 func TestParseTestEvents(t *testing.T) {
 	events := `
-{"Action":"run","Test":"TestLazytest_CreateTask_BadInput"}
-{"Action":"run","Test":"TestLazytest_CreateTask_BadInput/invalid_json"}
-{"Action":"output","Test":"TestLazytest_CreateTask_BadInput/invalid_json","Output":"=== RUN   TestLazytest_CreateTask_BadInput/invalid_json\n"}
-{"Action":"output","Test":"TestLazytest_CreateTask_BadInput/invalid_json","Output":"    api_lazytest_test.go:35: status = 500, want < 500 for bad input\n"}
-{"Action":"fail","Test":"TestLazytest_CreateTask_BadInput/invalid_json"}
-{"Action":"fail","Test":"TestLazytest_CreateTask_BadInput"}
-{"Action":"output","Test":"FuzzLazytest_Initial/seed#0","Output":"--- FAIL: FuzzLazytest_Initial/seed#0 (0.00s)\n"}
-{"Action":"fail","Test":"FuzzLazytest_Initial/seed#0"}
-{"Action":"output","Test":"FuzzLazytest_Initial","Output":"panic: runtime error: index out of range [0] with length 0\n"}
-{"Action":"fail","Test":"FuzzLazytest_Initial"}
-{"Action":"output","Test":"TestLazytest_Server_handleGit_BadInput/empty_request","Output":"    git_lazytest_test.go:21: panic: nil pointer dereference (the Server is zero-valued; give it real dependencies if it needs them)\n"}
-{"Action":"fail","Test":"TestLazytest_Server_handleGit_BadInput/empty_request"}
-{"Action":"pass","Test":"TestLazytest_Task_JSONRoundtrip"}
+{"Action":"run","Test":"TestYawntest_CreateTask_BadInput"}
+{"Action":"run","Test":"TestYawntest_CreateTask_BadInput/invalid_json"}
+{"Action":"output","Test":"TestYawntest_CreateTask_BadInput/invalid_json","Output":"=== RUN   TestYawntest_CreateTask_BadInput/invalid_json\n"}
+{"Action":"output","Test":"TestYawntest_CreateTask_BadInput/invalid_json","Output":"    api_yawntest_test.go:35: status = 500, want < 500 for bad input\n"}
+{"Action":"fail","Test":"TestYawntest_CreateTask_BadInput/invalid_json"}
+{"Action":"fail","Test":"TestYawntest_CreateTask_BadInput"}
+{"Action":"output","Test":"FuzzYawntest_Initial/seed#0","Output":"--- FAIL: FuzzYawntest_Initial/seed#0 (0.00s)\n"}
+{"Action":"fail","Test":"FuzzYawntest_Initial/seed#0"}
+{"Action":"output","Test":"FuzzYawntest_Initial","Output":"panic: runtime error: index out of range [0] with length 0\n"}
+{"Action":"fail","Test":"FuzzYawntest_Initial"}
+{"Action":"output","Test":"TestYawntest_Server_handleGit_BadInput/empty_request","Output":"    git_yawntest_test.go:21: panic: nil pointer dereference (the Server is zero-valued; give it real dependencies if it needs them)\n"}
+{"Action":"fail","Test":"TestYawntest_Server_handleGit_BadInput/empty_request"}
+{"Action":"pass","Test":"TestYawntest_Task_JSONRoundtrip"}
 {"Action":"fail"}
 `
 	buildFailure := `
@@ -40,10 +40,10 @@ func TestParseTestEvents(t *testing.T) {
 			name:   "failed tests",
 			events: events,
 			want: []Finding{
-				{Test: "TestLazytest_CreateTask_BadInput/invalid_json", Message: "status = 500, want < 500 for bad input"},
-				{Test: "FuzzLazytest_Initial/seed#0", Message: "panic: runtime error: index out of range [0] with length 0"},
+				{Test: "TestYawntest_CreateTask_BadInput/invalid_json", Message: "status = 500, want < 500 for bad input"},
+				{Test: "FuzzYawntest_Initial/seed#0", Message: "panic: runtime error: index out of range [0] with length 0"},
 				{
-					Test:       "TestLazytest_Server_handleGit_BadInput/empty_request",
+					Test:       "TestYawntest_Server_handleGit_BadInput/empty_request",
 					Message:    "panic: nil pointer dereference (the Server is zero-valued; give it real dependencies if it needs them)",
 					NeedsSetup: true,
 				},
@@ -69,7 +69,7 @@ func TestParseTestEvents(t *testing.T) {
 	}
 }
 
-func TestLazytestTestsReportsFailures(t *testing.T) {
+func TestYawntestTestsReportsFailures(t *testing.T) {
 	if testing.Short() {
 		t.Skip("runs the go tool")
 	}
@@ -77,25 +77,25 @@ func TestLazytestTestsReportsFailures(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "go.mod", "module bug\n\ngo 1.22\n")
 	writeFile(t, dir, "bug.go", "package bug\n\nfunc Initial(name string) byte { return name[0] }\n")
-	writeFile(t, dir, "bug_lazytest_test.go", `package bug
+	writeFile(t, dir, "bug_yawntest_test.go", `package bug
 
 import "testing"
 
-func TestLazytest_Initial(t *testing.T) { Initial("") }
+func TestYawntest_Initial(t *testing.T) { Initial("") }
 
-func TestLazytest_Fine(t *testing.T) {}
+func TestYawntest_Fine(t *testing.T) {}
 
-func TestUserWritten(t *testing.T) { t.Fatal("not run by lazytest") }
+func TestUserWritten(t *testing.T) { t.Fatal("not run by yawntest") }
 `)
 
-	findings, err := LazytestTests([]string{dir})
+	findings, err := YawntestTests([]string{dir})
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if len(findings) != 1 {
 		t.Fatalf("got %d findings, want 1: %+v", len(findings), findings)
 	}
-	if got, want := findings[0].Test, "TestLazytest_Initial"; got != want {
+	if got, want := findings[0].Test, "TestYawntest_Initial"; got != want {
 		t.Errorf("Test = %q, want %q", got, want)
 	}
 	if !strings.HasPrefix(findings[0].Message, "panic:") {
@@ -103,7 +103,7 @@ func TestUserWritten(t *testing.T) { t.Fatal("not run by lazytest") }
 	}
 }
 
-func TestLazytestTestsReportsBuildFailure(t *testing.T) {
+func TestYawntestTestsReportsBuildFailure(t *testing.T) {
 	if testing.Short() {
 		t.Skip("runs the go tool")
 	}
@@ -112,7 +112,7 @@ func TestLazytestTestsReportsBuildFailure(t *testing.T) {
 	writeFile(t, dir, "go.mod", "module broken\n\ngo 1.22\n")
 	writeFile(t, dir, "broken.go", "package broken\n\nfunc Broken() int { return \"x\" }\n")
 
-	findings, err := LazytestTests([]string{dir})
+	findings, err := YawntestTests([]string{dir})
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}

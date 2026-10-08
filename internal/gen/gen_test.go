@@ -40,7 +40,7 @@ func TestGolden(t *testing.T) {
 }
 
 // Puts every fixture with its generated tests into one package, like a real project with
-// several lazytest files side by side, and runs go vet and go test there.
+// several yawntest files side by side, and runs go vet and go test there.
 func TestGeneratedCodeCompilesAndPasses(t *testing.T) {
 	if testing.Short() {
 		t.Skip("runs the go tool")
@@ -63,7 +63,7 @@ func TestGeneratedCodeCompilesAndPasses(t *testing.T) {
 }
 
 func TestTestPath(t *testing.T) {
-	if got, want := TestPath("internal/api/tasks.go"), "internal/api/tasks_lazytest_test.go"; got != want {
+	if got, want := TestPath("internal/api/tasks.go"), "internal/api/tasks_yawntest_test.go"; got != want {
 		t.Errorf("TestPath = %q, want %q", got, want)
 	}
 }
