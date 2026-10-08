@@ -1,17 +1,9 @@
-' Shared look for all diagrams. Render with -DDARK=1 for the dark variant.
-!if %variable_exists("DARK")
-  !$bg = "#1B1C24"
-  !$fg = "#E6E6EB"
-  !$box = "#2B2D3A"
-  !$line = "#9AA0B5"
-  !$accent = "#C9A7FF"
-!else
-  !$bg = "#FFFFFF"
-  !$fg = "#1F2330"
-  !$box = "#F4F5FA"
-  !$line = "#5B6275"
-  !$accent = "#6B4FBB"
-!endif
+' Shared look for all diagrams. These are the light colors; render.sh adds the dark ones.
+!$bg = "#FFFFFF"
+!$fg = "#1F2330"
+!$box = "#F4F5FA"
+!$line = "#5B6275"
+!$accent = "#6B4FBB"
 
 skinparam backgroundColor $bg
 skinparam defaultFontName Helvetica

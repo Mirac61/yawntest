@@ -5,10 +5,7 @@ use, and why things are the way they are. For usage see the [README](../README.m
 
 ## The flow
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="diagrams/flow-dark.svg">
-  <img alt="UML activity diagram of one lazytest run" src="diagrams/flow.svg">
-</picture>
+![UML activity diagram of one lazytest run](diagrams/flow.svg)
 
 `--changed` filters the scan result by `git diff HEAD` before either branch. The exit code
 comes from the report: `1` if there's something to look at, `2` if lazytest itself failed.
@@ -28,10 +25,7 @@ error in a run is fatal, so `must(...)` ends the program instead of passing erro
 | `internal/changes` | Lines changed since `HEAD`, and filters for scan results | `changes.go` |
 | `internal/report` | Text and JSON output, the exit-code decision | one file per section, `result.go`, `json.go` |
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="diagrams/packages-dark.svg">
-  <img alt="UML package diagram of lazytest's imports" src="diagrams/packages.svg">
-</picture>
+![UML package diagram of lazytest's imports](diagrams/packages.svg)
 
 Shortcuts are left out: `cmd` also imports `scan`, `gen` and `run` directly, and `changes`
 imports `detect`, but each already reaches them through another arrow. `detect` and `run` import nothing else from lazytest,
