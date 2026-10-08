@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"strings"
@@ -21,16 +22,32 @@ const (
 )
 
 type options struct {
-	root     string
-	check    bool
-	force    bool
-	runTests bool
-	changed  bool
-	json     bool
+	command string // check, gen or run
+	root    string
+	force   bool
+	changed bool
+	json    bool
 }
 
+const usage = `usage: yawntest <command> [flags] [path]
+
+commands:
+  check  list untested candidates, hints and error paths no test reaches; writes nothing
+  gen    write tests for the untested candidates
+  run    gen, then run the generated tests and report failures as findings
+
+path defaults to ".", "./..." works too. See yawntest <command> -h for the flags.
+`
+
 func main() {
-	opts := parseFlags()
+	opts, err := parseArgs(os.Args[1:], os.Stderr)
+	if errors.Is(err, flag.ErrHelp) {
+		return
+	}
+	if err != nil {
+		os.Exit(exitError)
+	}
+
 	result := collect(opts)
 	if opts.json {
 		mustReport(report.JSON(os.Stdout, result))
@@ -42,35 +59,55 @@ func main() {
 	}
 }
 
-func parseFlags() options {
-	check := flag.Bool("check", false, "report untested patterns without writing files")
-	force := flag.Bool("force", false, "regenerate existing yawntest files")
-	runTests := flag.Bool("run", false, "run the generated tests afterwards and report failures as findings")
-	changed := flag.Bool("changed", false, "only look at code changed since the last commit")
-	jsonOutput := flag.Bool("json", false, "print the result as JSON")
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: yawntest [--check] [--force] [--run] [--changed] [--json] [path]")
-		flag.PrintDefaults()
+// parseArgs prints usage and errors to output itself; an error only tells main to stop.
+func parseArgs(args []string, output io.Writer) (options, error) {
+	if len(args) == 0 {
+		fmt.Fprint(output, usage)
+		return options{}, errors.New("no command")
 	}
-	flag.Parse()
 
-	return options{
-		root:     rootArg(),
-		check:    *check,
-		force:    *force,
-		runTests: *runTests,
-		changed:  *changed,
-		json:     *jsonOutput,
+	opts := options{command: args[0], root: "."}
+	flags := flag.NewFlagSet("yawntest "+opts.command, flag.ContinueOnError)
+	flags.SetOutput(output)
+	switch opts.command {
+	case "check":
+	case "gen", "run":
+		flags.BoolVar(&opts.force, "force", false, "overwrite existing yawntest files")
+	case "help", "-h", "-help", "--help":
+		fmt.Fprint(output, usage)
+		return options{}, flag.ErrHelp
+	default:
+		fmt.Fprintf(output, "yawntest: unknown command %q\n\n%s", opts.command, usage)
+		return options{}, errors.New("unknown command")
 	}
+	flags.BoolVar(&opts.changed, "changed", false, "only look at code changed since the last commit")
+	flags.BoolVar(&opts.json, "json", false, "print the result as JSON")
+	flags.Usage = func() {
+		fmt.Fprintf(output, "usage: yawntest %s [flags] [path]\n", opts.command)
+		flags.PrintDefaults()
+	}
+
+	if err := flags.Parse(args[1:]); err != nil {
+		return options{}, err
+	}
+	// Go's flag parsing stops at the path, so a flag after it would be silently ignored.
+	if flags.NArg() > 1 {
+		fmt.Fprintf(output, "yawntest: one path only, flags go before it; got %q\n", flags.Args())
+		return options{}, errors.New("too many args")
+	}
+	if flags.NArg() == 1 {
+		opts.root = strings.TrimSuffix(flags.Arg(0), "/...")
+	}
+	return opts, nil
 }
 
 func collect(opts options) report.Result {
-	if opts.check {
+	if opts.command == "check" {
 		return check(opts)
 	}
 
 	result := report.Result{Generated: generate(opts)}
-	if opts.runTests {
+	if opts.command == "run" {
 		dirs := must(scan.Dirs(opts.root, scan.IsYawntestFile))
 		result.Findings = must(run.YawntestTests(dirs))
 	}
@@ -78,7 +115,7 @@ func collect(opts options) report.Result {
 }
 
 func printText(opts options, result report.Result) {
-	if opts.check {
+	if opts.command == "check" {
 		mustReport(report.Untested(os.Stdout, result.Untested))
 		mustReport(report.Hints(os.Stdout, result.Untested))
 		mustReport(report.ErrorPaths(os.Stdout, result.ErrorPaths))
@@ -86,7 +123,7 @@ func printText(opts options, result report.Result) {
 	}
 
 	mustReport(report.Generated(os.Stdout, result.Generated))
-	if opts.runTests {
+	if opts.command == "run" {
 		mustReport(report.Findings(os.Stdout, result.Findings))
 	}
 }
@@ -174,11 +211,4 @@ func mustReport(err error) {
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, "yawntest:", err)
 	os.Exit(exitError)
-}
-
-func rootArg() string {
-	if flag.NArg() == 0 {
-		return "."
-	}
-	return strings.TrimSuffix(flag.Arg(0), "/...")
 }

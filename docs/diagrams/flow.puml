@@ -3,12 +3,12 @@
 
 start
 :Scan the source tree;
-if (--check?) then (yes)
+if (check?) then (yes)
   :Find error returns
   no test reaches;
 else (no)
   :Write *_yawntest_test.go;
-  if (--run?) then (yes)
+  if (run?) then (yes)
     :Run the generated tests;
   endif
 endif

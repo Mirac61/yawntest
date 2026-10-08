@@ -12,7 +12,7 @@ trip, the same input gives the same output, split amounts add up to the total. W
 generated test fails on your current code, that's a **finding**, a likely bug.
 
 ```text
-$ yawntest --run ./...
+$ yawntest run ./...
 shop/order.go
   ✓ Order        json-roundtrip  1 test
   ✓ CreateOrder  http-handler    3 cases
@@ -50,23 +50,27 @@ Needs the Go version from [`go.mod`](go.mod) and `git` for `--changed`.
 ## Usage
 
 ```bash
-yawntest [flags] [path]     # path defaults to ".", "./..." works too
+yawntest <command> [flags] [path]     # path defaults to ".", "./..." works too
 ```
 
-| Flag | What it does |
+| Command | What it does |
 |---|---|
-| *(none)* | Generate tests for every untested candidate below `path` |
-| `--check` | Write nothing. List untested candidates, domain hints and error paths no test reaches |
-| `--run` | Generate, then run the generated tests and report failures as findings |
-| `--changed` | Only look at code changed since the last commit (`git diff HEAD` plus untracked files) |
-| `--force` | Overwrite existing yawntest files |
-| `--json` | Print the result as JSON instead of text |
+| `check` | Write nothing. List untested candidates, domain hints and error paths no test reaches |
+| `gen` | Generate tests for every untested candidate below `path` |
+| `run` | `gen`, then run the generated tests and report failures as findings |
 
-Flags go before the path (`yawntest --check .`, not `yawntest . --check`).
+| Flag | Commands | What it does |
+|---|---|---|
+| `--changed` | all | Only look at code changed since the last commit (`git diff HEAD` plus untracked files) |
+| `--json` | all | Print the result as JSON instead of text |
+| `--force` | `gen`, `run` | Overwrite existing yawntest files |
+
+Flags go before the path (`yawntest check --json .`, not `yawntest check . --json`); a flag
+after it is an error.
 
 **Exit codes:** `0` all good, `1` something to look at (untested candidates or error paths
-with `--check`, findings with `--run`), `2` yawntest itself failed. Hints and tests that only
-need setup never cause a `1`, so `yawntest --check` and `yawntest --run` can gate CI.
+with `check`, findings with `run`), `2` yawntest itself failed. Hints and tests that only
+need setup never cause a `1`, so `yawntest check` and `yawntest run` can gate CI.
 
 ## What it generates
 
@@ -168,7 +172,7 @@ For a few shapes yawntest checks more than "no panic, deterministic":
 ## Checking without writing
 
 ```text
-$ yawntest --check ./...
+$ yawntest check ./...
 shop/order.go
   Order        json-roundtrip  line 11  has json tags
   CreateOrder  http-handler    line 20  handler signature, decodes JSON body
@@ -264,7 +268,7 @@ Try it on the example yourself, from a clone of this repo:
 
 ```bash
 go install ./cmd/yawntest
-cd _example && yawntest --run ./...
+cd _example && yawntest run ./...
 ```
 
 ## License

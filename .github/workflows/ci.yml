@@ -62,22 +62,22 @@ jobs:
         run: go build -o "$RUNNER_TEMP/yawntest" ./cmd/yawntest
 
       # The example has planted bugs, so both runs must exit 1 with the output the README shows.
-      - name: --check finds the candidates
+      - name: check finds the candidates
         working-directory: _example
         run: |
           set +e
-          "$RUNNER_TEMP/yawntest" --check ./... | tee check.txt
+          "$RUNNER_TEMP/yawntest" check ./... | tee check.txt
           code=${PIPESTATUS[0]}
           set -e
           test "$code" -eq 1
           grep -q "5 untested candidates in 2 files." check.txt
           grep -q "1 untested error path." check.txt
 
-      - name: --run finds the planted bugs
+      - name: run finds the planted bugs
         working-directory: _example
         run: |
           set +e
-          "$RUNNER_TEMP/yawntest" --run ./... | tee run.txt
+          "$RUNNER_TEMP/yawntest" run ./... | tee run.txt
           code=${PIPESTATUS[0]}
           set -e
           test "$code" -eq 1
@@ -94,7 +94,7 @@ jobs:
         working-directory: _example
         run: |
           before=$(cat shop/*_yawntest_test.go | sha256sum)
-          "$RUNNER_TEMP/yawntest" ./... | tee second.txt
+          "$RUNNER_TEMP/yawntest" gen ./... | tee second.txt
           grep -q "Nothing to do." second.txt
-          "$RUNNER_TEMP/yawntest" --force ./... > /dev/null
+          "$RUNNER_TEMP/yawntest" gen --force ./... > /dev/null
           test "$before" = "$(cat shop/*_yawntest_test.go | sha256sum)"

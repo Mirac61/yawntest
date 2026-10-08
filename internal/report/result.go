@@ -7,10 +7,10 @@ import (
 
 // Result is everything one yawntest run found, before it's printed as text or JSON.
 type Result struct {
-	Untested   []scan.File // --check, with hints
+	Untested   []scan.File // check, with hints
 	ErrorPaths []run.ErrorPath
 	Generated  []GeneratedFile
-	Findings   []run.Finding // --run
+	Findings   []run.Finding // run
 }
 
 // HasProblems decides the exit code. Hints and tests that only miss setup don't count.

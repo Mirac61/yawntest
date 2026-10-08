@@ -16,8 +16,8 @@ appear only as numbers.
 | private tool | 1 253 | 5 | 0 | 14 | 5 | 0 | 0 |
 | private terminal UI | 6 300 | 17 | 0 | 100 | 17 | **3** | 0 |
 
-Lines exclude generated templ files. A full `yawntest --run` took under 2 seconds per project
-with a warm build cache. A cold `--check` on lifelog, which runs every test with coverage, took
+Lines exclude generated templ files. A full `yawntest run` took under 2 seconds per project
+with a warm build cache. A cold `yawntest check` on lifelog, which runs every test with coverage, took
 about 5 seconds.
 
 On every project all generated files compiled, were `gofmt`- and `go vet`-clean, and a second
@@ -43,7 +43,7 @@ run produced byte-identical files.
 ## lifelog
 
 ```text
-$ yawntest --check
+$ yawntest check
 internal/api/day.go
   Server.handleDay  http-handler  line 11  handler signature
 internal/api/git.go
@@ -89,7 +89,7 @@ can't see deployment config, which is why this is a hint and not a finding: in a
 without `TZ` the year would flip an hour late on January 1st.
 
 ```text
-$ yawntest --run
+$ yawntest run
 internal/api/day.go
   ✓ Server.handleDay  http-handler  1 case
 internal/api/git.go
@@ -130,7 +130,7 @@ the database. The other four reach `s.db` first.
 The best-tested of the three. Money is integer cents throughout, so no money hints.
 
 ```text
-$ yawntest --run
+$ yawntest run
 internal/httperror/error_response.go
   ✓ ErrorResponse  json-roundtrip  1 test
 internal/invoice/invoice.go
@@ -148,7 +148,7 @@ All generated tests pass.
 ## Vlanscape backend
 
 ```text
-$ yawntest --run
+$ yawntest run
 internal/domain/types.go
   ✓ IsPassiveType   validation      8 cases (8 expected values TODO)
   ✓ WifiConnection  json-roundtrip  1 test
@@ -197,7 +197,7 @@ have caught it:
 |---|---|---|
 | Two yawntest files in one package didn't compile, both declared the same helper func | lifelog | Helpers inlined per test; the compile test now puts all fixtures into one package (`62d4e16`) |
 | One panicking handler ended the package's test binary, hiding every finding after it | lifelog | Every generated test recovers its own panic (`53f51c4`) |
-| Handlers missing their database showed up as findings and failed `--run` | lifelog, Vlanscape | Classified as "needs setup", listed apart (`dad5337`, `68c0112`) |
+| Handlers missing their database showed up as findings and failed `run` | lifelog, Vlanscape | Classified as "needs setup", listed apart (`dad5337`, `68c0112`) |
 | `darwin.go` and `linux.go` define the same function, so their tests clashed in one build | private terminal UI | Yawntest files copy the source's build constraint (`068f6f7`, `03d2590`) |
 | Money hint on `sizeTotal`, `totalOpacity`, `Stats.Total` | VentoryGo, lifelog | `total` no longer counts as money (`d776d3a`) |
 | `time.Now()` hint on every deadline, timer and argument: 37 hints, nearly all wrong | all | Only fires on a direct calendar read. 37 hints became 5 (`3a92189`) |
@@ -207,6 +207,6 @@ have caught it:
 ```bash
 go install github.com/Mirac61/yawntest/cmd/yawntest@latest
 git clone https://github.com/Mirac61/Lifelog && cd Lifelog
-yawntest --check
-yawntest --run
+yawntest check
+yawntest run
 ```

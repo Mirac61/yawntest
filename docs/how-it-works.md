@@ -10,7 +10,7 @@ use, and why things are the way they are. For usage see the [README](../README.m
 `--changed` filters the scan result by `git diff HEAD` before either branch. The exit code
 comes from the report: `1` if there's something to look at, `2` if yawntest itself failed.
 
-`main` only parses flags, calls `collect` to fill one `report.Result` and prints it. Every
+`main` only parses the command and its flags, calls `collect` to fill one `report.Result` and prints it. Every
 error in a run is fatal, so `must(...)` ends the program instead of passing errors up.
 
 ## Packages
@@ -149,7 +149,7 @@ template wraps them with the header, the build constraint and a sorted import bl
 - **No shared helpers:** Several yawntest files often end up in one package, and a helper func
   declared in each of them wouldn't compile.
 
-## Running tests (`--run`)
+## Running tests (`run`)
 
 1. Every directory holding a yawntest file runs `go test -json -run Yawntest .` on its own,
    so nested modules work and user tests stay out.
@@ -161,7 +161,7 @@ template wraps them with the header, the build constraint and a sorted import bl
 5. Findings whose message ends with the zero-receiver note are marked `NeedsSetup`. They're
    listed apart and don't change the exit code.
 
-## Untested error paths (`--check`)
+## Untested error paths (`check`)
 
 1. Every directory with source files runs `go test -coverprofile`. A failing test still writes
    a profile, only a missing one is an error. So is a profile without blocks from a failed
@@ -177,7 +177,7 @@ template wraps them with the header, the build constraint and a sorted import bl
 fully changed. Paths are resolved through symlinks, since macOS reports `/private/var/…` for
 `/var/…`.
 
-- `--check` keeps only matches, hints and error paths whose lines changed.
+- `check` keeps only matches, hints and error paths whose lines changed.
 - Generation keeps every match of a touched file, because the yawntest file is written as a
   whole and dropping matches would drop their tests.
 
@@ -214,10 +214,10 @@ tests on its own.
 
 | Milestone | Scope | Commits |
 |---|---|---|
-| M1 | Scan, four detectors, `--check` report | `981a987` |
+| M1 | Scan, four detectors, the check report | `981a987` |
 | M2 | Generation for json-roundtrip and pure-func, writing files, `--force` | `89d9c84` … `d83e8f5` |
 | M3 | Generation for http-handler and validation | `d7c5781` … `eaefcfd` |
-| M4 | `--run` findings, `--changed`, untested error paths | `00ee8e1` … `ed9cfed` |
+| M4 | Findings from running the tests, `--changed`, untested error paths | `00ee8e1` … `ed9cfed` |
 | M5 | Hints, invariants, DST and midnight seeds | `baeb013` … `37a038f` |
 | Extra | `--json`; fixes from running on real projects | `c8bf6e8` … `3a92189` |
 

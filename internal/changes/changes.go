@@ -104,7 +104,7 @@ func parseDiff(top, diff string) map[string]File {
 	return changed
 }
 
-// KeepChangedMatches keeps only matches and hints whose lines changed. Used by --check.
+// KeepChangedMatches keeps only matches and hints whose lines changed. Used by check.
 func KeepChangedMatches(files []scan.File, changed map[string]File) ([]scan.File, error) {
 	var kept []scan.File
 	for _, file := range files {
