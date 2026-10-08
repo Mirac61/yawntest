@@ -4,10 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
-	"strings"
 
 	"github.com/Mirac61/yawntest/internal/changes"
 	"github.com/Mirac61/yawntest/internal/gen"
@@ -29,16 +27,6 @@ type options struct {
 	json    bool
 }
 
-const usage = `usage: yawntest <command> [flags] [path]
-
-commands:
-  check  list untested candidates, hints and error paths no test reaches; writes nothing
-  gen    write tests for the untested candidates
-  run    gen, then run the generated tests and report failures as findings
-
-path defaults to ".", "./..." works too. See yawntest <command> -h for the flags.
-`
-
 func main() {
 	opts, err := parseArgs(os.Args[1:], os.Stderr)
 	if errors.Is(err, flag.ErrHelp) {
@@ -57,48 +45,6 @@ func main() {
 	if result.HasProblems() {
 		os.Exit(exitProblems)
 	}
-}
-
-// parseArgs prints usage and errors to output itself; an error only tells main to stop.
-func parseArgs(args []string, output io.Writer) (options, error) {
-	if len(args) == 0 {
-		fmt.Fprint(output, usage)
-		return options{}, errors.New("no command")
-	}
-
-	opts := options{command: args[0], root: "."}
-	flags := flag.NewFlagSet("yawntest "+opts.command, flag.ContinueOnError)
-	flags.SetOutput(output)
-	switch opts.command {
-	case "check":
-	case "gen", "run":
-		flags.BoolVar(&opts.force, "force", false, "overwrite existing yawntest files")
-	case "help", "-h", "-help", "--help":
-		fmt.Fprint(output, usage)
-		return options{}, flag.ErrHelp
-	default:
-		fmt.Fprintf(output, "yawntest: unknown command %q\n\n%s", opts.command, usage)
-		return options{}, errors.New("unknown command")
-	}
-	flags.BoolVar(&opts.changed, "changed", false, "only look at code changed since the last commit")
-	flags.BoolVar(&opts.json, "json", false, "print the result as JSON")
-	flags.Usage = func() {
-		fmt.Fprintf(output, "usage: yawntest %s [flags] [path]\n", opts.command)
-		flags.PrintDefaults()
-	}
-
-	if err := flags.Parse(args[1:]); err != nil {
-		return options{}, err
-	}
-	// Go's flag parsing stops at the path, so a flag after it would be silently ignored.
-	if flags.NArg() > 1 {
-		fmt.Fprintf(output, "yawntest: one path only, flags go before it; got %q\n", flags.Args())
-		return options{}, errors.New("too many args")
-	}
-	if flags.NArg() == 1 {
-		opts.root = strings.TrimSuffix(flags.Arg(0), "/...")
-	}
-	return opts, nil
 }
 
 func collect(opts options) report.Result {
