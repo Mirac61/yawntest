@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="892" height="429" viewBox="0 0 892 429">
+<rect width="892" height="429" rx="10" fill="#1B1C24"/>
+<circle cx="22" cy="20" r="6" fill="#FF5F57"/><circle cx="42" cy="20" r="6" fill="#FEBC2E"/><circle cx="62" cy="20" r="6" fill="#28C840"/>
+<g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#E6E6EB" xml:space="preserve" style="white-space: pre">
+<text x="22" y="54" textLength="168.0" lengthAdjust="spacingAndGlyphs"><tspan fill="#C9A7FF">$</tspan> yawntest run ./...</text>
+<text x="22" y="75" textLength="109.2" lengthAdjust="spacingAndGlyphs">shop/order.go</text>
+<text x="22" y="96" textLength="327.6" lengthAdjust="spacingAndGlyphs">  <tspan fill="#6FD99A">✓</tspan> Order        json-roundtrip  1 test</text>
+<text x="22" y="117" textLength="336.0" lengthAdjust="spacingAndGlyphs">  <tspan fill="#6FD99A">✓</tspan> CreateOrder  http-handler    3 cases</text>
+<text x="22" y="138" textLength="554.4" lengthAdjust="spacingAndGlyphs">  <tspan fill="#6FD99A">✓</tspan> Split        pure-func       fuzz, 9 seeds, parts sum to total</text>
+<text x="22" y="159" textLength="386.4" lengthAdjust="spacingAndGlyphs">  <tspan fill="#6FD99A">✓</tspan> Initial      pure-func       fuzz, 8 seeds</text>
+<text x="22" y="180" textLength="100.8" lengthAdjust="spacingAndGlyphs">shop/user.go</text>
+<text x="22" y="201" textLength="529.2" lengthAdjust="spacingAndGlyphs">  <tspan fill="#6FD99A">✓</tspan> ValidateEmail  validation  9 cases (8 expected values TODO)</text>
+<text x="22" y="222"></text>
+<text x="22" y="243" textLength="226.8" lengthAdjust="spacingAndGlyphs">Wrote 2 files with 5 tests.</text>
+<text x="22" y="264"></text>
+<text x="22" y="285" textLength="411.6" lengthAdjust="spacingAndGlyphs">Findings, generated tests that fail on your code:</text>
+<text x="22" y="306" textLength="697.2" lengthAdjust="spacingAndGlyphs">  <tspan fill="#FF7A7A">✗</tspan> <tspan fill="#7E8599">shop/order.go:20</tspan>  CreateOrder  status = 500, want &lt; 500 for bad input (3 cases)</text>
+<text x="22" y="327" textLength="814.8" lengthAdjust="spacingAndGlyphs">  <tspan fill="#FF7A7A">✗</tspan> <tspan fill="#7E8599">shop/order.go:30</tspan>  Split        Split(100, 3) parts add up to 99, want the total 100 (4 cases)</text>
+<text x="22" y="348" textLength="848.4" lengthAdjust="spacingAndGlyphs">  <tspan fill="#FF7A7A">✗</tspan> <tspan fill="#7E8599">shop/order.go:42</tspan>  Initial      panic: runtime error: slice bounds out of range [:1] with length 0</text>
+<text x="22" y="369"></text>
+<text x="22" y="390" textLength="92.4" lengthAdjust="spacingAndGlyphs">3 findings.</text>
+</g></svg>

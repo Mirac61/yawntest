@@ -160,6 +160,10 @@ template wraps them with the header, the build constraint and a sorted import bl
 4. A package that doesn't build becomes one finding with the compiler error.
 5. Findings whose message ends with the zero-receiver note are marked `NeedsSetup`. They're
    listed apart and don't change the exit code.
+6. The report folds the failed cases of one test func into one line and maps it back to the
+   source match, so it shows `shop/order.go:30  Split` instead of `FuzzYawntest_Split/seed#5`.
+   The longest generated name wins: `Server_Create_BadInput` belongs to `Server.Create`.
+   Colors only go to a terminal, and `NO_COLOR` turns them off.
 
 ## Untested error paths (`check`)
 

@@ -56,7 +56,7 @@ func (b *builder) httpHandler(match detect.Match) (summary string, ok bool) {
 
 	b.use("net/http", "net/http/httptest", "strings", "testing")
 	b.execute(httpTemplate, map[string]any{
-		"TestName":    testName(match.Name),
+		"TestName":    TestName(match.Name),
 		"Handler":     handler,
 		"NoPanic":     noPanic(zeroReceiverNote(match.Name)),
 		"DecodesJSON": match.DecodesJSON,

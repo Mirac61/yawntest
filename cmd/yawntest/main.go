@@ -36,6 +36,7 @@ func main() {
 		os.Exit(exitError)
 	}
 
+	report.Color = !opts.json && isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == ""
 	result := collect(opts)
 	if opts.json {
 		mustReport(report.JSON(os.Stdout, result))
@@ -70,7 +71,7 @@ func printText(opts options, result report.Result) {
 
 	mustReport(report.Generated(os.Stdout, result.Generated))
 	if opts.command == "run" {
-		mustReport(report.Findings(os.Stdout, result.Findings))
+		mustReport(report.Findings(os.Stdout, result.Findings, result.Generated))
 	}
 }
 
@@ -157,4 +158,9 @@ func mustReport(err error) {
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, "yawntest:", err)
 	os.Exit(exitError)
+}
+
+func isTerminal(file *os.File) bool {
+	info, err := file.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }

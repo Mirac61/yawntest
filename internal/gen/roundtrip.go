@@ -48,7 +48,7 @@ func (b *builder) roundtrip(match detect.Match) string {
 
 	b.execute(roundtripTemplate, map[string]any{
 		"Type":     match.Name,
-		"TestName": testName(match.Name),
+		"TestName": TestName(match.Name),
 		"Fields":   fields,
 	})
 	return "1 test"

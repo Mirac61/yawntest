@@ -2,42 +2,23 @@
 
 [![CI](https://github.com/Mirac61/yawntest/actions/workflows/ci.yml/badge.svg)](https://github.com/Mirac61/yawntest/actions/workflows/ci.yml)
 
-**Writes the boring tests for your Go code.** yawntest reads your source, recognizes common
-shapes (HTTP handlers, JSON structs, pure functions, validators) and generates tests for them.
-Offline, deterministic, no AI, standard library only.
+**Writes the boring tests for your Go code.** Offline, deterministic, no AI, standard library
+only.
 
-It never guesses what your code *should* return. It only checks things that hold no matter
-what your business logic is: no panic, bad input never gives a 5xx, JSON survives a round
-trip, the same input gives the same output, split amounts add up to the total. When a
-generated test fails on your current code, that's a **finding**, a likely bug.
+<p align="center">
+  <img src="docs/demo.svg" alt="yawntest run on the example package: five tests written, three findings with file and line">
+</p>
 
-```text
-$ yawntest run ./...
-shop/order.go
-  ✓ Order        json-roundtrip  1 test
-  ✓ CreateOrder  http-handler    3 cases
-  ✓ Split        pure-func       fuzz, 9 seeds, parts sum to total
-  ✓ Initial      pure-func       fuzz, 8 seeds
-shop/user.go
-  ✓ ValidateEmail  validation  9 cases (8 expected values TODO)
+That's a real run on [`_example/`](_example/), a small shop package with three planted bugs:
+a handler that answers bad input with a 500, a split that loses cents, and a panic on empty
+input. All three are found, each pointing at the line to fix.
 
-Wrote 2 files with 5 tests, skipped 0 candidates.
-
-Findings (generated tests that fail on the current code):
-  ⚠ shop  TestYawntest_CreateOrder_BadInput/empty_request    status = 500, want < 500 for bad input
-  ⚠ shop  TestYawntest_CreateOrder_BadInput/invalid_json     status = 500, want < 500 for bad input
-  ⚠ shop  TestYawntest_CreateOrder_BadInput/empty_json_body  status = 500, want < 500 for bad input
-  ⚠ shop  FuzzYawntest_Split/seed#5                          Split(100, 3) parts add up to 99, want the total 100
-  ⚠ shop  FuzzYawntest_Split/seed#6                          Split(101, 2) parts add up to 100, want the total 101
-  ⚠ shop  FuzzYawntest_Split/seed#7                          Split(1, 3) parts add up to 0, want the total 1
-  ⚠ shop  FuzzYawntest_Split/seed#8                          Split(999, 7) parts add up to 994, want the total 999
-  ⚠ shop  FuzzYawntest_Initial/seed#0                        panic: runtime error: slice bounds out of range [:1] with length 0
-
-8 findings.
-```
-
-That output is real: it's yawntest run on [`_example/`](_example/), a small shop package with
-three planted bugs. All three are found.
+yawntest reads your source, recognizes common shapes (HTTP handlers, JSON structs, pure
+functions, validators) and generates tests for them. It never guesses what your code *should*
+return. It only checks things that hold no matter what your business logic is: no panic, bad
+input never gives a 5xx, JSON survives a round trip, the same input gives the same output,
+split amounts add up to the total. When a generated test fails on your current code, that's a
+**finding**, a likely bug.
 
 ## Install
 
@@ -207,16 +188,9 @@ Error returns no test reaches:
 ## Findings vs. "needs setup"
 
 Methods are tested on a zero-valued receiver, since yawntest can't know your dependencies.
-A handler that touches its database then panics. Those failures are listed apart and don't
-fail the run. Shortened output from [lifelog](docs/real-world.md#lifelog):
-
-```text
-Needs setup (methods panicked on a zero-valued receiver, give them real dependencies):
-  · internal/api  TestYawntest_Server_handleGit_BadInput/empty_request  panic: runtime error: invalid memory address or nil pointer dereference (the Server is zero-valued; give it real dependencies if it needs them)
-  …
-
-0 findings, 4 tests without setup.
-```
+A handler that touches its database then panics. Those failures are listed apart under
+"Needs setup" and don't fail the run; see [lifelog](docs/real-world.md#lifelog) for a real
+example.
 
 Fill in the receiver in the generated file, e.g. `handler := (&Server{db: testDB}).handleGit`.
 

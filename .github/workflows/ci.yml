@@ -82,7 +82,7 @@ jobs:
           set -e
           test "$code" -eq 1
           grep -q "Wrote 2 files with 5 tests" run.txt
-          grep -q "8 findings." run.txt
+          grep -q "3 findings." run.txt
 
       - name: Generated files are gofmt and vet clean
         working-directory: _example

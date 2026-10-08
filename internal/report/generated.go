@@ -27,13 +27,13 @@ func Generated(w io.Writer, files []GeneratedFile) error {
 		fmt.Fprintln(table, file.Source)
 		for _, test := range file.Output.Tests {
 			if file.Written {
-				fmt.Fprintf(table, "  ✓ %s\t%s\t%s\n", test.Match.Name, test.Match.Pattern, test.Summary)
+				fmt.Fprintf(table, "  %s %s\t%s\t%s\n", paint(green, "✓"), test.Match.Name, test.Match.Pattern, test.Summary)
 			} else {
-				fmt.Fprintf(table, "  ! %s\t%s\t%s exists, rerun with --force\n", test.Match.Name, test.Match.Pattern, file.TestPath)
+				fmt.Fprintf(table, "  %s %s\t%s\t%s exists, rerun with --force\n", paint(amber, "!"), test.Match.Name, test.Match.Pattern, file.TestPath)
 			}
 		}
 		for _, match := range file.Output.Skipped {
-			fmt.Fprintf(table, "  · %s\t%s\tskipped, needs inputs yawntest can't build\n", match.Name, match.Pattern)
+			fmt.Fprintf(table, "  %s %s\t%s\tskipped, needs inputs yawntest can't build\n", paint(gray, "·"), match.Name, match.Pattern)
 		}
 
 		skipped += len(file.Output.Skipped)
@@ -46,7 +46,10 @@ func Generated(w io.Writer, files []GeneratedFile) error {
 		return err
 	}
 
-	_, err := fmt.Fprintf(w, "\nWrote %s with %s, skipped %s.\n",
-		plural(writtenFiles, "file"), plural(writtenTests, "test"), plural(skipped, "candidate"))
+	summary := fmt.Sprintf("Wrote %s with %s", plural(writtenFiles, "file"), plural(writtenTests, "test"))
+	if skipped > 0 {
+		summary += ", skipped " + plural(skipped, "candidate")
+	}
+	_, err := fmt.Fprintf(w, "\n%s.\n", summary)
 	return err
 }

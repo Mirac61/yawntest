@@ -51,7 +51,7 @@ func TestGenerated(t *testing.T) {
 			}},
 			want: "a.go\n" +
 				"  ! Add  pure-func  a_yawntest_test.go exists, rerun with --force\n" +
-				"\nWrote 0 files with 0 tests, skipped 0 candidates.\n",
+				"\nWrote 0 files with 0 tests.\n",
 		},
 	}
 

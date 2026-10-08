@@ -83,7 +83,8 @@ func callable(name string) string {
 	return "new(" + receiver + ")." + method
 }
 
-func testName(name string) string {
+// TestName is the part of a generated test func name that names the match: Server_Create.
+func TestName(name string) string {
 	return strings.ReplaceAll(name, ".", "_")
 }
 

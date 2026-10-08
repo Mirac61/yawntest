@@ -62,7 +62,7 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 	b.use("testing")
 	data := map[string]any{
 		"Name":     match.Name,
-		"TestName": testName(match.Name),
+		"TestName": TestName(match.Name),
 		"Call":     callable(match.Name),
 		"Result":   resultVar(match.Results[0].Expr),
 		"NoPanic":  noPanic(zeroReceiverNote(match.Name)),
