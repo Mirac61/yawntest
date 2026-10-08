@@ -5,9 +5,7 @@
 **Writes the boring tests for your Go code.** Offline, deterministic, no AI, standard library
 only.
 
-<p align="center">
-  <img src="docs/demo.svg" alt="yawntest run on the example package: five tests written, three findings with file and line">
-</p>
+![yawntest run on the example package: five tests written, three findings with file and line](docs/demo.svg)
 
 That's a real run on [`_example/`](_example/), a small shop package with three planted bugs:
 a handler that answers bad input with a 500, a split that loses cents, and a panic on empty
