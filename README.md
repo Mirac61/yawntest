@@ -1,5 +1,7 @@
 # lazytest
 
+[![CI](https://github.com/Mirac61/lazytest/actions/workflows/ci.yml/badge.svg)](https://github.com/Mirac61/lazytest/actions/workflows/ci.yml)
+
 **Writes the boring tests for your Go code.** lazytest reads your source, recognizes common
 shapes (HTTP handlers, JSON structs, pure functions, validators) and generates tests for them.
 Offline, deterministic, no AI, standard library only.

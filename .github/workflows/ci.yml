@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: gofmt, vet, Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # macOS too: changes resolves /var vs /private/var symlinks there.
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Tests
+        run: go test -race ./...
+
+  example:
+    name: Example (CLI end to end)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build -o "$RUNNER_TEMP/lazytest" ./cmd/lazytest
+
+      # The example has planted bugs, so both runs must exit 1 with the output the README shows.
+      - name: --check finds the candidates
+        working-directory: _example
+        run: |
+          set +e
+          "$RUNNER_TEMP/lazytest" --check ./... | tee check.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          test "$code" -eq 1
+          grep -q "5 untested candidates in 2 files." check.txt
+          grep -q "1 untested error path." check.txt
+
+      - name: --run finds the planted bugs
+        working-directory: _example
+        run: |
+          set +e
+          "$RUNNER_TEMP/lazytest" --run ./... | tee run.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          test "$code" -eq 1
+          grep -q "Wrote 2 files with 5 tests" run.txt
+          grep -q "8 findings." run.txt
+
+      - name: Generated files are gofmt and vet clean
+        working-directory: _example
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+
+      - name: A second run changes nothing
+        working-directory: _example
+        run: |
+          before=$(cat shop/*_lazytest_test.go | sha256sum)
+          "$RUNNER_TEMP/lazytest" ./... | tee second.txt
+          grep -q "Nothing to do." second.txt
+          "$RUNNER_TEMP/lazytest" --force ./... > /dev/null
+          test "$before" = "$(cat shop/*_lazytest_test.go | sha256sum)"
