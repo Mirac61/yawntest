@@ -1,2 +1,2 @@
-hint 13 dates: time.Now() uses the server's local time zone; call .UTC() or .In(loc) before working with the date
-hint 16 dates: time.Now() uses the server's local time zone; call .UTC() or .In(loc) before working with the date
+hint 8 dates: time.Now().Format() depends on the server's time zone; call .UTC() or .In(loc) first
+hint 10 dates: time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first

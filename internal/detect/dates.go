@@ -1,46 +1,39 @@
 package detect
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 )
 
-// Calls on time.Now() whose result doesn't depend on the time zone.
-var zoneSafeMethods = map[string]bool{
-	"UTC": true, "In": true,
-	"Unix": true, "UnixMilli": true, "UnixMicro": true, "UnixNano": true,
-	"Sub": true, "Before": true, "After": true, "Equal": true, "Compare": true,
+// Methods whose result depends on the time zone. Deadlines, durations and
+// comparisons (Add, Sub, Before, Unix) don't, so time.Now() passed on or used
+// for timing is left alone.
+// ponytail: only direct chains; now := time.Now() followed by now.Year() is missed.
+var calendarMethods = map[string]bool{
+	"Year": true, "Month": true, "Day": true, "Weekday": true, "YearDay": true, "ISOWeek": true,
+	"Date": true, "Clock": true, "Hour": true, "Minute": true, "AddDate": true,
+	"Format": true, "AppendFormat": true,
 }
 
 func nowWithoutLocation(fset *token.FileSet, file *ast.File, imports importTable) []Hint {
-	zoneSafe := map[*ast.CallExpr]bool{}
-	var nowCalls []*ast.CallExpr
-
-	ast.Inspect(file, func(node ast.Node) bool {
-		switch node := node.(type) {
-		case *ast.SelectorExpr:
-			call, ok := node.X.(*ast.CallExpr)
-			if ok && zoneSafeMethods[node.Sel.Name] {
-				zoneSafe[call] = true
-			}
-		case *ast.CallExpr:
-			if imports.isMember(node.Fun, "time", "Now") {
-				nowCalls = append(nowCalls, node)
-			}
-		}
-		return true
-	})
-
 	var hints []Hint
-	for _, call := range nowCalls {
-		if zoneSafe[call] {
-			continue
+	ast.Inspect(file, func(node ast.Node) bool {
+		selector, ok := node.(*ast.SelectorExpr)
+		if !ok || !calendarMethods[selector.Sel.Name] {
+			return true
 		}
+		call, ok := selector.X.(*ast.CallExpr)
+		if !ok || !imports.isMember(call.Fun, "time", "Now") {
+			return true
+		}
+
 		hints = append(hints, Hint{
 			Line:    fset.Position(call.Pos()).Line,
 			Domain:  "dates",
-			Message: "time.Now() uses the server's local time zone; call .UTC() or .In(loc) before working with the date",
+			Message: fmt.Sprintf("time.Now().%s() depends on the server's time zone; call .UTC() or .In(loc) first", selector.Sel.Name),
 		})
-	}
+		return true
+	})
 	return hints
 }
