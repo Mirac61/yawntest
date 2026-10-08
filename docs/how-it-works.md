@@ -202,8 +202,8 @@ Marked in the code with `ponytail:` comments, each naming its upgrade path:
 
 ## How it was built
 
-Built in about 50 small commits following the milestones from the [pitch](../PITCH.md). Every commit
-builds and passes its tests on its own.
+Built in about 50 small commits, milestone by milestone. Every commit builds and passes its
+tests on its own.
 
 | Milestone | Scope | Commits |
 |---|---|---|

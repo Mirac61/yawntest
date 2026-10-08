@@ -257,7 +257,6 @@ it's why some things slip through:
 
 - [How it works](docs/how-it-works.md): architecture, every detection rule, design decisions
 - [Real-world runs](docs/real-world.md): what yawntest found on real projects
-- [Pitch](PITCH.md): the original brief
 
 Try it on the example yourself, from a clone of this repo:
 
