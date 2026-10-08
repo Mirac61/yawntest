@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"io"
+	"runtime/debug"
 	"testing"
 )
 
@@ -42,9 +43,22 @@ func TestParseArgs(t *testing.T) {
 	}
 }
 
-func TestVersion(t *testing.T) {
-	if version() == "" {
-		t.Error("version() is empty")
+func TestVersionOf(t *testing.T) {
+	stamped := &debug.BuildInfo{Main: debug.Module{Version: "v0.2.0"}}
+	tests := []struct {
+		name string
+		info *debug.BuildInfo
+		ok   bool
+		want string
+	}{
+		{"no build info", nil, false, "(devel)"},
+		{"unstamped build", &debug.BuildInfo{}, true, "(devel)"},
+		{"go install", stamped, true, "v0.2.0"},
+	}
+	for _, tt := range tests {
+		if got := versionOf(tt.info, tt.ok); got != tt.want {
+			t.Errorf("%s: versionOf = %q, want %q", tt.name, got, tt.want)
+		}
 	}
 }
 

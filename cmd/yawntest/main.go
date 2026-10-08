@@ -33,10 +33,15 @@ var versionArgs = []string{"version", "-version", "--version"}
 
 // version is the module version go install stamped into the binary, "(devel)" for other builds.
 func version() string {
-	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
-		return info.Main.Version
+	info, ok := debug.ReadBuildInfo()
+	return versionOf(info, ok)
+}
+
+func versionOf(info *debug.BuildInfo, ok bool) string {
+	if !ok || info.Main.Version == "" {
+		return "(devel)"
 	}
-	return "(devel)"
+	return info.Main.Version
 }
 
 func main() {
