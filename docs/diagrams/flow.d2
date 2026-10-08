@@ -1,0 +1,25 @@
+# One lazytest run. Render: see docs/diagrams/README.md
+direction: down
+
+classes: {
+  step: {style.border-radius: 8}
+  question: {shape: diamond}
+}
+
+start: "lazytest [path]" {shape: oval}
+scan: "Scan\nparse files, find patterns and hints" {class: step}
+check: "--check?" {class: question}
+coverage: "Coverage\nerror returns no test reaches" {class: step}
+generate: "Generate\nwrite *_lazytest_test.go" {class: step}
+run: "--run?" {class: question}
+tests: "Run generated tests\nfailures become findings" {class: step}
+report: "Report\ntext or JSON, exit code" {shape: oval}
+
+start -> scan -> check
+check -> coverage: yes
+check -> generate: no
+generate -> run
+run -> tests: yes
+run -> report: no
+coverage -> report
+tests -> report
