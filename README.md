@@ -26,6 +26,13 @@ go install github.com/Mirac61/yawntest/cmd/yawntest@latest
 
 Needs the Go version from [`go.mod`](go.mod) and `git` for `--changed`.
 
+### Versioning
+
+yawntest follows [SemVer](https://semver.org) and is pre-1.0: between `0.x` minor versions the
+CLI and its output can change. That covers commands and flags, exit codes, the JSON shape and the
+names of generated files. New checks can also add findings to code that was clean before. If
+you gate CI on yawntest, pin a version (`@v0.1.0`). `yawntest --version` prints the one you have.
+
 ## Usage
 
 ```bash

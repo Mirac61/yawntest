@@ -42,6 +42,12 @@ func TestParseArgs(t *testing.T) {
 	}
 }
 
+func TestVersion(t *testing.T) {
+	if version() == "" {
+		t.Error("version() is empty")
+	}
+}
+
 func TestParseArgsHelp(t *testing.T) {
 	for _, args := range [][]string{{"help"}, {"-h"}, {"run", "-h"}} {
 		if _, err := parseArgs(args, io.Discard); !errors.Is(err, flag.ErrHelp) {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime/debug"
+	"slices"
 
 	"github.com/Mirac61/yawntest/internal/changes"
 	"github.com/Mirac61/yawntest/internal/gen"
@@ -27,7 +29,21 @@ type options struct {
 	json    bool
 }
 
+var versionArgs = []string{"version", "-version", "--version"}
+
+// version is the module version go install stamped into the binary, "(devel)" for other builds.
+func version() string {
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+		return info.Main.Version
+	}
+	return "(devel)"
+}
+
 func main() {
+	if len(os.Args) == 2 && slices.Contains(versionArgs, os.Args[1]) {
+		fmt.Println(version())
+		return
+	}
 	opts, err := parseArgs(os.Args[1:], os.Stderr)
 	if errors.Is(err, flag.ErrHelp) {
 		return

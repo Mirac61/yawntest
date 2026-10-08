@@ -17,6 +17,7 @@ commands:
   run    gen, then run the generated tests and report failures as findings
 
 path defaults to ".", "./..." works too. See yawntest <command> -h for the flags.
+yawntest --version prints the version.
 `
 
 var helpArgs = []string{"help", "-h", "-help", "--help"}
