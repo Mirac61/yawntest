@@ -1,0 +1,37 @@
+@startuml packages
+!pragma layout elk
+!include style.iuml
+skinparam linetype ortho
+
+package "cmd/lazytest" as cmd {
+  label "flags, wiring,\nexit code" as cmdText
+}
+package report {
+  label "text and JSON\noutput" as reportText
+}
+package changes {
+  label "lines changed\nsince HEAD" as changesText
+}
+package scan {
+  label "walk the tree,\nparse files" as scanText
+}
+package gen {
+  label "write the\ntest files" as genText
+}
+package detect {
+  label "AST rules for\npatterns and hints" as detectText
+}
+package run {
+  label "go test,\ncoverage" as runText
+}
+
+cmd ..> report
+cmd ..> changes
+report ..> gen
+report ..> scan
+changes ..> scan
+changes ..> run
+gen ..> detect
+gen ..> run
+scan ..> detect
+@enduml

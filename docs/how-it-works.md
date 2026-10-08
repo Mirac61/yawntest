@@ -5,7 +5,10 @@ use, and why things are the way they are. For usage see the [README](../README.m
 
 ## The flow
 
-![One lazytest run](diagrams/flow.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/flow-dark.svg">
+  <img alt="UML activity diagram of one lazytest run" src="diagrams/flow.svg">
+</picture>
 
 `--changed` filters the scan result by `git diff HEAD` before either branch. The exit code
 comes from the report: `1` if there's something to look at, `2` if lazytest itself failed.
@@ -25,13 +28,16 @@ error in a run is fatal, so `must(...)` ends the program instead of passing erro
 | `internal/changes` | Lines changed since `HEAD`, and filters for scan results | `changes.go` |
 | `internal/report` | Text and JSON output, the exit-code decision | one file per section, `result.go`, `json.go` |
 
-![Package dependencies](diagrams/packages.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/packages-dark.svg">
+  <img alt="UML package diagram of lazytest's imports" src="diagrams/packages.svg">
+</picture>
 
 Shortcuts are left out: `cmd` also imports `scan`, `gen` and `run` directly, and `changes`
 imports `detect`, but each already reaches them through another arrow. `detect` and `run` import nothing else from lazytest,
 and only the standard library is used, no `golang.org/x/tools`.
 
-The diagrams are written in [D2](https://d2lang.com), sources and render command are in
+Dashed arrows are imports. The diagrams are PlantUML; sources and the render command are in
 [`diagrams/`](diagrams/).
 
 ## Scanning

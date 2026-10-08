@@ -1,11 +1,15 @@
 # Diagrams
 
-Written in [D2](https://d2lang.com). The docs embed the SVGs, which switch between a light
-and a dark theme with the viewer's color scheme. After editing a `.d2` file, re-render from
-the repo root:
+UML diagrams in [PlantUML](https://plantuml.com): an activity diagram for one run and a package
+diagram for the imports. `style.iuml` holds the shared look; every diagram is rendered twice,
+light and dark, and the docs pick one with `prefers-color-scheme`.
+
+After editing a `.puml` file, re-render from this directory with the
+[PlantUML jar](https://plantuml.com/download) (needs Java, no Graphviz):
 
 ```bash
-for f in docs/diagrams/*.d2; do
-  go run oss.terrastruct.com/d2@v0.7.1 --layout elk --theme 0 --dark-theme 200 --pad 24 "$f" "${f%.d2}.svg"
+for f in flow packages; do
+  java -jar plantuml.jar -tsvg -pipe < $f.puml > $f.svg
+  java -jar plantuml.jar -DDARK=1 -tsvg -pipe < $f.puml > $f-dark.svg
 done
 ```

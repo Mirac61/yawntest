@@ -1,0 +1,61 @@
+' Shared look for all diagrams. Render with -DDARK=1 for the dark variant.
+!if %variable_exists("DARK")
+  !$bg = "#1B1C24"
+  !$fg = "#E6E6EB"
+  !$box = "#2B2D3A"
+  !$line = "#9AA0B5"
+  !$accent = "#C9A7FF"
+!else
+  !$bg = "#FFFFFF"
+  !$fg = "#1F2330"
+  !$box = "#F4F5FA"
+  !$line = "#5B6275"
+  !$accent = "#6B4FBB"
+!endif
+
+skinparam backgroundColor $bg
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 15
+skinparam defaultFontColor $fg
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam padding 10
+skinparam nodesep 70
+skinparam ranksep 80
+skinparam ArrowColor $line
+skinparam ArrowThickness 1.4
+skinparam ArrowFontColor $fg
+skinparam ArrowFontSize 13
+
+skinparam activity {
+  BackgroundColor $box
+  BorderColor $accent
+  BorderThickness 1.5
+  DiamondBackgroundColor $box
+  DiamondBorderColor $accent
+  StartColor $accent
+  EndColor $accent
+  BarColor $accent
+}
+skinparam ActivityDiamondFontSize 15
+
+skinparam package {
+  BackgroundColor $box
+  BorderColor $accent
+  BorderThickness 1.5
+  FontSize 16
+  FontStyle bold
+}
+skinparam label {
+  FontSize 14
+}
+
+' The stop node ignores the activity block, so its color is set on its own.
+<style>
+activityDiagram {
+  circle {
+    BackgroundColor $accent
+    LineColor $accent
+  }
+}
+</style>
