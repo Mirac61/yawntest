@@ -1,14 +1,14 @@
-# How lazytest works
+# How yawntest works
 
-What happens between `lazytest` and a finished `*_lazytest_test.go`, every rule the detectors
+What happens between `yawntest` and a finished `*_yawntest_test.go`, every rule the detectors
 use, and why things are the way they are. For usage see the [README](../README.md).
 
 ## The flow
 
-![UML activity diagram of one lazytest run](diagrams/flow.svg)
+![UML activity diagram of one yawntest run](diagrams/flow.svg)
 
 `--changed` filters the scan result by `git diff HEAD` before either branch. The exit code
-comes from the report: `1` if there's something to look at, `2` if lazytest itself failed.
+comes from the report: `1` if there's something to look at, `2` if yawntest itself failed.
 
 `main` only parses flags, calls `collect` to fill one `report.Result` and prints it. Every
 error in a run is fatal, so `must(...)` ends the program instead of passing errors up.
@@ -17,7 +17,7 @@ error in a run is fatal, so `must(...)` ends the program instead of passing erro
 
 | Package | Job | Main files |
 |---|---|---|
-| `cmd/lazytest` | Flags, wiring, writing files, exit codes | `main.go` |
+| `cmd/yawntest` | Flags, wiring, writing files, exit codes | `main.go` |
 | `internal/detect` | Read one parsed file, return pattern matches and hints. Never touches disk | `detect.go`, one file per pattern (`http.go`, `json.go`, `pure.go`, `validation.go`), one per hint (`money.go`, `dates.go`, `auth.go`), `invariants.go` |
 | `internal/scan` | Walk a tree, parse files, drop what's already tested, list dirs | `scan.go`, `constraint.go` |
 | `internal/gen` | Turn matches into a gofmt'ed test file | `gen.go`, one file per pattern, `seeds.go` for edge values |
@@ -25,10 +25,10 @@ error in a run is fatal, so `must(...)` ends the program instead of passing erro
 | `internal/changes` | Lines changed since `HEAD`, and filters for scan results | `changes.go` |
 | `internal/report` | Text and JSON output, the exit-code decision | one file per section, `result.go`, `json.go` |
 
-![UML package diagram of lazytest's imports](diagrams/packages.svg)
+![UML package diagram of yawntest's imports](diagrams/packages.svg)
 
 Shortcuts are left out: `cmd` also imports `scan`, `gen` and `run` directly, and `changes`
-imports `detect`, but each already reaches them through another arrow. `detect` and `run` import nothing else from lazytest,
+imports `detect`, but each already reaches them through another arrow. `detect` and `run` import nothing else from yawntest,
 and only the standard library is used, no `golang.org/x/tools`.
 
 Dashed arrows are imports. The diagrams are PlantUML; sources and the render command are in
@@ -37,14 +37,14 @@ Dashed arrows are imports. The diagrams are PlantUML; sources and the render com
 ## Scanning
 
 - Skips the dirs the go tool skips: `vendor`, `testdata`, and anything starting with `.` or `_`
-  (that's why `_example/` doesn't show up in lazytest's own checks).
+  (that's why `_example/` doesn't show up in yawntest's own checks).
 - Skips files with a `// Code generated … DO NOT EDIT.` header.
 - Every identifier in a directory's `_test.go` files goes into a set. A match counts as tested
   if its name (`Validate` for `User.Validate`) is in that set.
-- When generating without `--force`, existing lazytest files count as tests, so a second run
+- When generating without `--force`, existing yawntest files count as tests, so a second run
   does nothing. With `--force` they don't, and the files get rewritten.
 - Each source file remembers its build constraint, from a `//go:build` line or a file name like
-  `open_linux.go`. The lazytest file gets the same constraint.
+  `open_linux.go`. The yawntest file gets the same constraint.
 
 ## Detection
 
@@ -58,7 +58,7 @@ can't call them.
 ### http-handler
 
 - Two params `http.ResponseWriter` and `*http.Request`, as a function or a method.
-- Or a function returning `http.HandlerFunc`. With params it's skipped later, because lazytest
+- Or a function returning `http.HandlerFunc`. With params it's skipped later, because yawntest
   can't invent its dependencies.
 - Records whether the body calls `json.NewDecoder` or `json.Unmarshal`. Only then do the
   invalid-JSON cases get generated.
@@ -105,7 +105,7 @@ Names are split into words first (`unitPrice` → `unit`, `price`; `HTTPServer` 
 | auth | `==` or `!=` where one side is named with `password`, `token`, `secret`, `session` | Comparisons with `nil`, `""` or a number |
 
 The first versions of the money and dates rules fired far too often on real projects, see
-[real-world runs](real-world.md#what-the-real-projects-changed-in-lazytest).
+[real-world runs](real-world.md#what-the-real-projects-changed-in-yawntest).
 
 ## Generation
 
@@ -133,23 +133,23 @@ template wraps them with the header, the build constraint and a sorted import bl
   or like an imported package get renamed (`arg1`), so they don't shadow anything.
 - **Determinism check:** Calls the function twice and compares with `reflect.DeepEqual`.
   Results that print the same count as equal too, because `NaN != NaN`.
-- **Validator tables:** Every case runs and then `t.Skipf("TODO(lazytest): …")`. lazytest never
+- **Validator tables:** Every case runs and then `t.Skipf("TODO(yawntest): …")`. yawntest never
   writes an expected business value. Only named validators with a string param get the extra
   "empty input is rejected" test.
 - **Panics:** Every test body starts with a `recover`, so one panic fails one test and the
   rest of the package still runs. For methods the message names the zero-valued receiver as
   the likely cause.
-- **No shared helpers:** Several lazytest files often end up in one package, and a helper func
+- **No shared helpers:** Several yawntest files often end up in one package, and a helper func
   declared in each of them wouldn't compile.
 
 ## Running tests (`--run`)
 
-1. Every directory holding a lazytest file runs `go test -json -run Lazytest .` on its own,
+1. Every directory holding a yawntest file runs `go test -json -run Yawntest .` on its own,
    so nested modules work and user tests stay out.
 2. Every failing leaf test becomes a finding. A parent that only failed because a subtest
    failed is dropped.
 3. The message is the first meaningful output line without the `file.go:12:` prefix. A fuzz
-   seed's panic is printed under the parent test, so lazytest falls back to the parent's output.
+   seed's panic is printed under the parent test, so yawntest falls back to the parent's output.
 4. A package that doesn't build becomes one finding with the compiler error.
 5. Findings whose message ends with the zero-receiver note are marked `NeedsSetup`. They're
    listed apart and don't change the exit code.
@@ -170,15 +170,15 @@ fully changed. Paths are resolved through symlinks, since macOS reports `/privat
 `/var/…`.
 
 - `--check` keeps only matches, hints and error paths whose lines changed.
-- Generation keeps every match of a touched file, because the lazytest file is written as a
+- Generation keeps every match of a touched file, because the yawntest file is written as a
   whole and dropping matches would drop their tests.
 
-## How lazytest itself is tested
+## How yawntest itself is tested
 
 | What | How |
 |---|---|
 | Detection | Golden files: each `internal/detect/testdata/*.go` lists matches *and* near misses, its `.golden` holds the expected matches, fields, invariants and hints. `go test ./internal/detect -update` rewrites them |
-| Generation | Golden files for the generated code, plus one test that puts **all** fixtures and their generated tests into one temp module and runs `go vet` and `go test`. Two clashing lazytest files or a wrong build constraint fail there |
+| Generation | Golden files for the generated code, plus one test that puts **all** fixtures and their generated tests into one temp module and runs `go vet` and `go test`. Two clashing yawntest files or a wrong build constraint fail there |
 | Running | Temp modules with a planted panic and a broken build; `go test -json` output parsed from recorded events |
 | Coverage | Temp module where one test covers only the happy path |
 | `--changed` | Temp git repo with a commit, an edit and an untracked file |

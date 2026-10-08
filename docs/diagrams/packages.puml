@@ -3,7 +3,7 @@
 !include style.iuml
 skinparam linetype ortho
 
-package "cmd/lazytest" as cmd {
+package "cmd/yawntest" as cmd {
   label "flags, wiring,\nexit code" as cmdText
 }
 package report {

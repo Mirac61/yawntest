@@ -7,7 +7,7 @@ if (--check?) then (yes)
   :Find error returns
   no test reaches;
 else (no)
-  :Write *_lazytest_test.go;
+  :Write *_yawntest_test.go;
   if (--run?) then (yes)
     :Run the generated tests;
   endif
