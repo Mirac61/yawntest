@@ -85,6 +85,8 @@ can't call them.
   `User.Validate()`.
 - Or a single `string` param. Struct params only count via the name: `Save(u *User) error`
   has the same shape and validates nothing.
+- No I/O in its body, same rule as pure-func. The generated table calls it with `"a"`, `" "`
+  and friends, so `Delete(path string) error` must not qualify.
 
 ### Invariants (pure funcs only)
 

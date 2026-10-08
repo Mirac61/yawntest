@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"os"
 )
 
 type User struct{ Email string }
@@ -31,6 +32,13 @@ func Checkout(id, qty int) error { return nil }
 func Ping(ctx context.Context) error { return nil }
 
 func CheckConfig() error { return nil }
+
+func Delete(path string) error { return os.RemoveAll(path) }
+
+func ValidateFile(path string) error {
+	_, err := os.Stat(path)
+	return err
+}
 
 type Box[T any] struct{ value T }
 

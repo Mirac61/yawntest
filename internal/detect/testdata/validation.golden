@@ -1,16 +1,16 @@
-10-15 ValidateEmail validation: name Validate*, returns error
+11-16 ValidateEmail validation: name Validate*, returns error
     named validator
     params: (s string), results: (error?)
-17-17 IsValidAge validation: name IsValid*, returns bool
+18-18 IsValidAge validation: name IsValid*, returns bool
     named validator
     params: (n int), results: (bool)
-19-19 User.Validate validation: name Validate*, returns error
+20-20 User.Validate validation: name Validate*, returns error
     named validator
     params: (), results: (error?)
-21-21 checkName validation: name Check*, returns bool
+22-22 checkName validation: name Check*, returns bool
     named validator
     params: (s string), results: (bool)
-23-23 IsEmail validation: string param, returns bool
+24-24 IsEmail validation: string param, returns bool
     params: (s string), results: (bool)
-29-29 Checkout pure-func: basic params, no I/O
+30-30 Checkout pure-func: basic params, no I/O
     params: (id int, qty int), results: (error?)

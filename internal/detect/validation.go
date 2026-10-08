@@ -9,9 +9,13 @@ import (
 
 var validationPrefixes = []string{"Validate", "IsValid", "Check"}
 
-func detectValidation(fn *ast.FuncDecl, _ importTable) (string, bool) {
+func detectValidation(fn *ast.FuncDecl, imports importTable) (string, bool) {
 	result, ok := validationResult(fn.Type)
 	if !ok {
+		return "", false
+	}
+	// The generated test calls it with "a", " " and the like; Delete(path string) error must not run.
+	if hasSideEffects(fn.Body, imports) {
 		return "", false
 	}
 	params := fieldTypes(fn.Type.Params)
