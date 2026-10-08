@@ -41,6 +41,11 @@ Dashed arrows are imports. The diagrams are PlantUML; sources and the render com
 - Skips files with a `// Code generated … DO NOT EDIT.` header.
 - Every identifier in a directory's `_test.go` files goes into a set. A match counts as tested
   if its name (`Validate` for `User.Validate`) is in that set.
+- Funcs that are left count as tested if the directory's tests run their body: one
+  `go test -coverprofile -skip Yawntest` per directory with user-written tests. That catches
+  handlers tested through a router, whose names never appear in a test. yawntest's own tests
+  are skipped so `--force` still rewrites their files. If the tests don't build, the names
+  decide alone.
 - When generating without `--force`, existing yawntest files count as tests, so a second run
   does nothing. With `--force` they don't, and the files get rewritten.
 - Each source file remembers its build constraint, from a `//go:build` line or a file name like
@@ -183,7 +188,7 @@ fully changed. Paths are resolved through symlinks, since macOS reports `/privat
 | Detection | Golden files: each `internal/detect/testdata/*.go` lists matches *and* near misses, its `.golden` holds the expected matches, fields, invariants and hints. `go test ./internal/detect -update` rewrites them |
 | Generation | Golden files for the generated code, plus one test that puts **all** fixtures and their generated tests into one temp module and runs `go vet` and `go test`. Two clashing yawntest files or a wrong build constraint fail there |
 | Running | Temp modules with a planted panic and a broken build; `go test -json` output parsed from recorded events |
-| Coverage | Temp module where one test covers only the happy path |
+| Coverage | Temp module where one test covers only the happy path; one where a func is only reached through another, plus a yawntest test that must not count |
 | `--changed` | Temp git repo with a commit, an edit and an untracked file |
 | Reports | Table tests with the exact expected text and JSON |
 
@@ -198,7 +203,6 @@ Marked in the code with `ponytail:` comments, each naming its upgrade path:
 | `detect/pure.go` | I/O behind a call to another func isn't seen | go/types plus a call graph |
 | `detect/imports.go` | Assumes the package name equals the last path element (except `/vN`) | go/packages |
 | `detect/dates.go` | Only direct `time.Now().Year()` chains, not `now := time.Now(); now.Year()` | Track the variable |
-| `scan/scan.go` | "Tested" means the name appears in a test file | Coverage, as for error paths |
 | `gen/fuzz.go` | Slices are fuzzed with one element | Table tests for nil, empty, large |
 | `run/tests.go` | One `go test` per directory | Batch per module if it gets slow |
 | `scan/constraint.go` | Copy of go/build's GOOS/GOARCH lists | Add new ports |

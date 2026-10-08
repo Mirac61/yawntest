@@ -100,6 +100,7 @@ func check(opts options) report.Result {
 		files = must(changes.KeepChangedMatches(files, changed))
 		errorPaths = must(changes.KeepChangedErrorPaths(errorPaths, changed))
 	}
+	files = must(run.WithoutCovered(files))
 	return report.Result{Untested: files, ErrorPaths: errorPaths}
 }
 
@@ -110,6 +111,7 @@ func generate(opts options) []report.GeneratedFile {
 		changed := must(changes.SinceHEAD(opts.root))
 		files = must(changes.KeepChangedFiles(files, changed))
 	}
+	files = must(run.WithoutCovered(files))
 
 	var results []report.GeneratedFile
 	for _, file := range files {

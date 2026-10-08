@@ -191,7 +191,8 @@ Error returns no test reaches:
 ```
 
 - **Untested candidates:** code matching a pattern that no test file in the same directory
-  mentions by name.
+  mentions by name, and whose body the package's own tests never run (so a handler tested
+  through a router counts as tested).
 - **Hints:** money in floats (`amount`, `price`, `cost`, `balance`, `fee`), `time.Now()` read
   as a calendar value without a time zone, and secrets (`password`, `token`, `secret`,
   `session`) compared with `==`. Advice only, they never fail the check.
@@ -250,7 +251,8 @@ it's why some things slip through:
   treated as pure.
 - Slices are fuzzed with one element. Nil and empty slices are only covered in validator tables.
 - Pointers, maps and nested structs stay at their zero value in JSON round trips.
-- "Tested" means a test file mentions the name. Error paths use real coverage.
+- "Tested" means a test file mentions the name or the package's tests run the func. Structs
+  have nothing to run, so for them only the name counts.
 - Constructors with params (`NewHandler(db)`) are skipped.
 
 ## More

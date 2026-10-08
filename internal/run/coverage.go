@@ -9,7 +9,11 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
+
+	"github.com/Mirac61/yawntest/internal/detect"
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 type ErrorPath struct {
@@ -50,7 +54,7 @@ func (b coverBlock) contains(position token.Position) bool {
 
 // Failing tests still write a profile, so only a missing profile is an error. Tests that don't
 // build write one too, but without blocks, which would make every error return look reached.
-func coverProfile(dir string) ([]coverBlock, error) {
+func coverProfile(dir string, testArgs ...string) ([]coverBlock, error) {
 	profile, err := os.CreateTemp("", "yawntest-*.cover")
 	if err != nil {
 		return nil, err
@@ -58,7 +62,8 @@ func coverProfile(dir string) ([]coverBlock, error) {
 	profile.Close()
 	defer os.Remove(profile.Name())
 
-	cmd := exec.Command("go", "test", "-coverprofile="+profile.Name(), ".")
+	args := append([]string{"test", "-coverprofile=" + profile.Name()}, testArgs...)
+	cmd := exec.Command("go", append(args, ".")...)
 	cmd.Dir = dir
 	output, runErr := cmd.CombinedOutput()
 
@@ -192,4 +197,59 @@ func neverRan(position token.Position, fileName string, blocks []coverBlock) boo
 		instrumented = true
 	}
 	return instrumented
+}
+
+// WithoutCovered drops func matches whose body already runs in the package's own tests. The
+// name check in scan misses funcs that tests only reach indirectly, e.g. through a router.
+func WithoutCovered(files []scan.File) ([]scan.File, error) {
+	blocksByDir := map[string][]coverBlock{}
+	var kept []scan.File
+	for _, file := range files {
+		dir := filepath.Dir(file.Path)
+		blocks, seen := blocksByDir[dir]
+		if !seen && len(file.Matches) > 0 {
+			var err error
+			if blocks, err = ownTestCoverage(dir); err != nil {
+				return nil, err
+			}
+			blocksByDir[dir] = blocks
+		}
+
+		var matches []detect.Match
+		for _, match := range file.Matches {
+			if !ran(blocks, filepath.Base(file.Path), match.Line, match.EndLine) {
+				matches = append(matches, match)
+			}
+		}
+		file.Matches = matches
+		if len(matches) > 0 || len(file.Hints) > 0 {
+			kept = append(kept, file)
+		}
+	}
+	return kept, nil
+}
+
+// ownTestCoverage skips yawntest's tests, so --force still rewrites their files. Without
+// user-written tests, or when they don't build, it returns nil and the names decide alone.
+func ownTestCoverage(dir string) ([]coverBlock, error) {
+	tests, err := filepath.Glob(filepath.Join(dir, "*_test.go"))
+	if err != nil {
+		return nil, err
+	}
+	hasOwnTests := slices.ContainsFunc(tests, func(path string) bool { return !scan.IsYawntestFile(path) })
+	if !hasOwnTests {
+		return nil, nil
+	}
+
+	blocks, err := coverProfile(dir, "-skip", "Yawntest")
+	if err != nil {
+		return nil, nil
+	}
+	return blocks, nil
+}
+
+func ran(blocks []coverBlock, fileName string, startLine, endLine int) bool {
+	return slices.ContainsFunc(blocks, func(block coverBlock) bool {
+		return block.file == fileName && block.count > 0 && block.startLine <= endLine && block.endLine >= startLine
+	})
 }

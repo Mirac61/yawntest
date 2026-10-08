@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/Mirac61/yawntest/internal/scan"
 )
 
 func TestParseProfile(t *testing.T) {
@@ -111,5 +113,85 @@ func TestUntestedErrorPathsBrokenTests(t *testing.T) {
 	// Without the error, the empty profile would report every error return as reached.
 	if paths, err := UntestedErrorPaths([]string{dir}); err == nil {
 		t.Errorf("got paths %+v and no error, want an error for tests that don't build", paths)
+	}
+}
+
+func TestWithoutCovered(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs the go tool")
+	}
+
+	dir := t.TempDir()
+	writeFile(t, dir, "go.mod", "module cover\n\ngo 1.22\n")
+	writeFile(t, dir, "calc.go", `package cover
+
+type Item struct {
+	Name string `+"`json:\"name\"`"+`
+}
+
+func Double(n int) int { return n * 2 }
+
+func Triple(n int) int { return n * 3 }
+
+func Quadruple(n int) int { return n * 4 }
+
+func route(op string, n int) int {
+	switch op {
+	case "double":
+		return Double(n)
+	case "triple":
+		return Triple(n)
+	}
+	return Quadruple(n)
+}
+`)
+	// Like a router test: Double only runs through route, its name never appears.
+	writeFile(t, dir, "calc_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestRoute(t *testing.T) { route(\"double\", 1) }\n")
+	// --force: yawntest's own tests must not count, or their files would never be rewritten.
+	writeFile(t, dir, "calc_yawntest_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestYawntest_Quadruple(t *testing.T) { route(\"\", 1) }\n")
+
+	files, err := scan.Untested(dir, false)
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	files, err = WithoutCovered(files)
+	if err != nil {
+		t.Fatalf("coverage: %v", err)
+	}
+
+	var got []string
+	for _, file := range files {
+		for _, match := range file.Matches {
+			got = append(got, match.Name)
+		}
+	}
+	// Item has no statements to cover, so only its name could mark it tested.
+	want := []string{"Item", "Triple", "Quadruple"}
+	if !slices.Equal(got, want) {
+		t.Errorf("untested = %v, want %v", got, want)
+	}
+}
+
+func TestWithoutCoveredBrokenTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs the go tool")
+	}
+
+	dir := t.TempDir()
+	writeFile(t, dir, "go.mod", "module cover\n\ngo 1.22\n")
+	writeFile(t, dir, "calc.go", "package cover\n\nfunc Double(n int) int { return n * 2 }\n")
+	writeFile(t, dir, "calc_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestX(t *testing.T) { undefined() }\n")
+
+	files, err := scan.Untested(dir, true)
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	// Generation must still work when the user's tests are broken, so the names decide alone.
+	files, err = WithoutCovered(files)
+	if err != nil {
+		t.Fatalf("coverage: %v", err)
+	}
+	if len(files) != 1 || len(files[0].Matches) != 1 {
+		t.Errorf("files = %+v, want Double kept", files)
 	}
 }

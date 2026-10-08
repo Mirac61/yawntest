@@ -131,7 +131,7 @@ func collectIdents(file *ast.File, idents identSet) {
 	})
 }
 
-// ponytail: any name match counts as tested; coverage (M4) is precise.
+// Any name match counts as tested; run.WithoutCovered then drops funcs the tests run.
 func withoutTested(files []File, testIdentsByDir map[string]identSet) []File {
 	var untested []File
 	for _, file := range files {
