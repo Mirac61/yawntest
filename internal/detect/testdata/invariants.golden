@@ -18,4 +18,3 @@
     params: (day time.Time), results: (time.Time, time.Time)
 21-21 Times pure-func: basic params, no I/O
     params: (day time.Time), results: (created time.Time, updated time.Time)
-hint 15 money: total is a float64; floats can't hold cents exactly, use integer cents or a decimal type

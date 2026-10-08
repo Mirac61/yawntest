@@ -6,7 +6,8 @@ import (
 	"go/token"
 )
 
-var moneyWords = map[string]bool{"amount": true, "price": true, "total": true, "cost": true, "balance": true, "fee": true}
+// "total" is left out: totalOpacity or a Stats.Total count are far more common than money.
+var moneyWords = map[string]bool{"amount": true, "price": true, "cost": true, "balance": true, "fee": true}
 
 // floatMoney flags struct fields, params, results and vars with a money name and a float type.
 func floatMoney(fset *token.FileSet, file *ast.File) []Hint {

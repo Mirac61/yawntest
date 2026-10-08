@@ -15,3 +15,10 @@ func Charge(amount float32, rate float64) float64 { return float64(amount) * rat
 var shippingCost = 4.99
 
 var defaultBalance float64
+
+// not flagged: "total" alone is not money
+
+type Stats struct {
+	Total     float64
+	SizeTotal float64
+}

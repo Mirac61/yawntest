@@ -8,9 +8,10 @@ const (
 )
 
 var (
-	startWords = map[string]bool{"start": true, "from": true, "begin": true}
-	endWords   = map[string]bool{"end": true, "to": true, "until": true, "due": true, "deadline": true}
-	rangeWords = map[string]bool{"range": true, "bounds": true, "period": true, "window": true, "span": true}
+	splitTotalWords = map[string]bool{"total": true, "amount": true, "price": true, "cost": true, "balance": true, "fee": true}
+	startWords      = map[string]bool{"start": true, "from": true, "begin": true}
+	endWords        = map[string]bool{"end": true, "to": true, "until": true, "due": true, "deadline": true}
+	rangeWords      = map[string]bool{"range": true, "bounds": true, "period": true, "window": true, "span": true}
 )
 
 var integerTypes = map[string]bool{
@@ -37,7 +38,7 @@ func splitsTotal(params, results []Field) bool {
 		return false
 	}
 	total := params[0]
-	return hasWord(total.Name, moneyWords) &&
+	return hasWord(total.Name, splitTotalWords) &&
 		integerTypes[total.Type] &&
 		results[0].Type == "[]"+total.Type
 }
