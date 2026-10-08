@@ -48,7 +48,8 @@ func (b coverBlock) contains(position token.Position) bool {
 	return afterStart && beforeEnd
 }
 
-// Failing tests still write a profile, so only a missing profile is an error.
+// Failing tests still write a profile, so only a missing profile is an error. Tests that don't
+// build write one too, but without blocks, which would make every error return look reached.
 func coverProfile(dir string) ([]coverBlock, error) {
 	profile, err := os.CreateTemp("", "yawntest-*.cover")
 	if err != nil {
@@ -65,7 +66,14 @@ func coverProfile(dir string) ([]coverBlock, error) {
 	if err != nil || len(data) == 0 {
 		return nil, fmt.Errorf("coverage for %s: %v\n%s", dir, runErr, output)
 	}
-	return parseProfile(data)
+	blocks, err := parseProfile(data)
+	if err != nil {
+		return nil, err
+	}
+	if runErr != nil && len(blocks) == 0 {
+		return nil, fmt.Errorf("coverage for %s: %v\n%s", dir, runErr, output)
+	}
+	return blocks, nil
 }
 
 // Lines look like: example.com/pkg/file.go:9.2,10.16 2 1

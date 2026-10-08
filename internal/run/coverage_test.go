@@ -97,3 +97,19 @@ func MustParse(s string) int {
 		t.Errorf("paths = %+v, want %+v", paths, want)
 	}
 }
+
+func TestUntestedErrorPathsBrokenTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs the go tool")
+	}
+
+	dir := t.TempDir()
+	writeFile(t, dir, "go.mod", "module cover\n\ngo 1.22\n")
+	writeFile(t, dir, "parse.go", "package cover\n\nimport \"strconv\"\n\nfunc Parse(s string) (int, error) {\n\tn, err := strconv.Atoi(s)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\treturn n, nil\n}\n")
+	writeFile(t, dir, "parse_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestParse(t *testing.T) { undefined() }\n")
+
+	// Without the error, the empty profile would report every error return as reached.
+	if paths, err := UntestedErrorPaths([]string{dir}); err == nil {
+		t.Errorf("got paths %+v and no error, want an error for tests that don't build", paths)
+	}
+}

@@ -159,7 +159,8 @@ template wraps them with the header, the build constraint and a sorted import bl
 ## Untested error paths (`--check`)
 
 1. Every directory with source files runs `go test -coverprofile`. A failing test still writes
-   a profile, only a missing profile is an error.
+   a profile, only a missing one is an error. So is a profile without blocks from a failed
+   run: tests that don't build leave just the `mode:` line.
 2. Every `return` whose last value is `err`, or a call taking `err` like
    `fmt.Errorf("…: %w", err)`, is looked up in the profile blocks.
 3. It's reported if it lies in an instrumented block that ran zero times and in no block that
