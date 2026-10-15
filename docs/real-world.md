@@ -56,6 +56,17 @@ false positives fall into a handful of causes, each with its own fix.
 | gjson `isDotPiperChar("")` | false positive | An unexported helper whose every caller checks there's a next byte; `""` never reaches it. |
 | decimal (hang) | false positive | `NewFromFloatWithExponent` with an exponent of `math.MaxInt32` loops for minutes. Nothing reported it as a finding, the run just took 10 minutes. |
 
+### After the fixes
+
+| Cause | Findings | Fix |
+|---|---:|---|
+| A func result compared for determinism | 9 | Funcs returning a func, a channel or an interface other than `error` are no pure-func candidates |
+| A documented panic, `Must*`, `Require*` | 5 | Not a candidate of any pattern |
+| An unexported helper given `""` | 2 | Unexported validators get no `nil`, no `""` and no "empty is rejected" test |
+
+With these, the corpus has **3 findings, all real** (go-humanize). decimal's hang is still
+there and now shows up as `go test failed`, since nothing else in that package fails anymore.
+
 The 4 hints:
 
 | Hint | Verdict | Why |
