@@ -27,7 +27,7 @@ func TestUntested(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tree, err := Scan("testdata", nil)
+			tree, err := Scan("testdata", Options{})
 			if err != nil {
 				t.Fatalf("scan: %v", err)
 			}
@@ -141,7 +141,7 @@ func TestX(t *testing.T) {
 }
 `)
 
-	tree, err := Scan(dir, nil)
+	tree, err := Scan(dir, Options{})
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}

@@ -3,6 +3,7 @@ package detect
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 	"strings"
 )
 
@@ -176,6 +177,14 @@ func wrappedError(call *ast.CallExpr) (ast.Expr, bool) {
 
 // inputOnlyCall: strconv.Atoi, base64.StdEncoding.DecodeString, a pure func or method of this package.
 func (fn errorFunc) inputOnlyCall(call *ast.CallExpr) bool {
+	switch object := fn.pkg.objectOf(call.Fun).(type) {
+	case *types.Func:
+		return fn.pkg.inputOnlyFunc(object)
+	case nil:
+		// no type information: read the syntax below
+	default:
+		return false // a func-typed variable or field: anything could be behind it
+	}
 	switch callee := call.Fun.(type) {
 	case *ast.Ident:
 		return fn.pkg.pureFunc(callee.Name)
@@ -192,6 +201,19 @@ func (fn errorFunc) inputOnlyCall(call *ast.CallExpr) bool {
 		}
 	}
 	return false
+}
+
+// inputOnlyFunc is the typed version: the callee's own package decides, not the syntax.
+func (p *Package) inputOnlyFunc(fn *types.Func) bool {
+	pkg := fn.Pkg()
+	if pkg == nil || abstractMethod(fn) {
+		return false
+	}
+	if target := p.packageAt(pkg.Path()); target != nil {
+		return target.pureFunc(funcKey(fn))
+	}
+	path := pkg.Path()
+	return (inputErrorPackages[path] || inputErrorFuncs[path][fn.Name()]) && !p.funcImpure(fn)
 }
 
 // lastAssignment finds the value assigned to name last before pos: in `n, err := strconv.Atoi(s)`
