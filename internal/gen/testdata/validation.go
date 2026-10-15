@@ -48,3 +48,7 @@ type node struct{ parent *node }
 
 // checkNode is unexported, so its callers never pass nil: no nil case (urfave/cli).
 func checkNode(n *node) bool { return n.parent == nil }
+
+// isOperator is unexported, so its callers already checked there's a byte to look at: no
+// empty case and no "empty is rejected" test (tidwall/gjson, labstack/echo).
+func isOperator(s string) bool { return s[0] == '+' || s[0] == '-' }
