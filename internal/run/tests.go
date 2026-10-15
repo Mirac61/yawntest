@@ -22,21 +22,30 @@ type Finding struct {
 	NeedsSetup bool // a method panicked on its zero-valued receiver
 }
 
-// ponytail: one go test per dir, so nested modules work; batch by module if this gets slow.
+// One go test per dir, so nested modules work; a few run at once.
 func YawntestTests(dirs []string) ([]Finding, error) {
+	findingsByDir := make([][]Finding, len(dirs))
+	errs := make([]error, len(dirs))
+	indexes := make([]int, len(dirs))
+	for i := range indexes {
+		indexes[i] = i
+	}
+	parallel(indexes, func(i int) {
+		findingsByDir[i], errs[i] = yawntestTestsIn(dirs[i])
+	})
+
 	var findings []Finding
-	for _, dir := range dirs {
-		dirFindings, err := yawntestTestsIn(dir)
-		if err != nil {
-			return nil, err
+	for i := range dirs {
+		if errs[i] != nil {
+			return nil, errs[i]
 		}
-		findings = append(findings, dirFindings...)
+		findings = append(findings, findingsByDir[i]...)
 	}
 	return findings, nil
 }
 
 func yawntestTestsIn(dir string) ([]Finding, error) {
-	cmd := exec.Command("go", "test", "-json", "-run", "Yawntest", ".")
+	cmd := exec.Command("go", "test", "-json", "-run", yawntestTests, ".")
 	cmd.Dir = dir
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

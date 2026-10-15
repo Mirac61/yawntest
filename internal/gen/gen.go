@@ -69,6 +69,10 @@ func (b *builder) add(match detect.Match) (summary string, ok bool) {
 		return b.httpHandler(match)
 	case detect.PatternValidation:
 		return b.validation(match)
+	case detect.PatternRoundtrip:
+		return b.pairRoundtrip(match), true
+	case detect.PatternEnumRoundtrip:
+		return b.enumRoundtrip(match), true
 	default:
 		return "", false
 	}
@@ -149,7 +153,7 @@ func (b *builder) render(pkg, buildConstraint string) ([]byte, error) {
 
 	code, err := format.Source(source.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("format generated code: %w", err)
+		return nil, fmt.Errorf("format generated code: %w", err) //yawntest:ignore the templates always give valid Go; the golden tests prove it
 	}
 	return code, nil
 }

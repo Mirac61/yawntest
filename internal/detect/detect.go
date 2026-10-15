@@ -5,7 +5,17 @@ import (
 	"go/token"
 )
 
-type funcDetector func(fn *ast.FuncDecl, imports importTable) (reason string, ok bool)
+// env is what a detector sees besides the func: its file's imports and its package.
+type env struct {
+	imports importTable
+	pkg     *Package
+}
+
+func (e env) hasSideEffects(fn *ast.FuncDecl) bool {
+	return e.pkg.hasSideEffects(fn, e.imports)
+}
+
+type funcDetector func(fn *ast.FuncDecl, e env) (reason string, ok bool)
 
 // First hit wins, so validation beats pure-func.
 var funcDetectors = []struct {
@@ -17,24 +27,32 @@ var funcDetectors = []struct {
 	{PatternPureFunc, detectPureFunc},
 }
 
+// File detects one file as if it were its package's only file.
 func File(fset *token.FileSet, file *ast.File) []Match {
-	imports := newImportTable(file)
+	return NewPackage([]*ast.File{file}).File(fset, file)
+}
+
+// File returns the matches of one of the package's files, in source order.
+func (p *Package) File(fset *token.FileSet, file *ast.File) []Match {
+	e := env{imports: newImportTable(file), pkg: p}
 
 	var matches []Match
 	for _, decl := range file.Decls {
 		switch decl := decl.(type) {
 		case *ast.FuncDecl:
-			if match, ok := matchFunc(fset, decl, imports); ok {
+			if match, ok := matchFunc(fset, decl, e); ok {
 				matches = append(matches, match)
 			}
+			matches = append(matches, p.funcPairs(fset, decl, e)...)
 		case *ast.GenDecl:
-			matches = append(matches, matchJSONStructs(fset, decl, imports)...)
+			matches = append(matches, matchJSONStructs(fset, decl, e.imports)...)
 		}
 	}
 	return matches
 }
 
-func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Match, bool) {
+func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, e env) (Match, bool) {
+	imports := e.imports
 	// No body: implemented in assembly.
 	if fn.Body == nil {
 		return Match{}, false
@@ -45,7 +63,7 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, imports importTable) (Matc
 	}
 
 	for _, detector := range funcDetectors {
-		reason, ok := detector.detect(fn, imports)
+		reason, ok := detector.detect(fn, e)
 		if !ok {
 			continue
 		}
