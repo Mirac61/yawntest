@@ -1,0 +1,19 @@
+15-15 Shout pure-func: basic params, no I/O
+    params: (h Handle=string), results: (Handle=string)
+19-19 Halve pure-func: basic params, no I/O
+    params: (a Amount=int64, l Level=uint8), results: (Amount=int64)
+22-22 NormalizeHandle pure-func: basic params, no I/O
+    invariant: idempotent
+    params: (h Handle=string), results: (Handle=string)
+25-25 FormatAmount pure-func: basic params, no I/O
+    params: (a Amount=int64), results: (string)
+25-25 FormatAmount roundtrip: pairs with ParseAmount, no I/O
+    partner: ParseAmount
+    params: (a Amount=int64), results: (string)
+27-30 ParseAmount pure-func: basic params, no I/O
+    params: (s string), results: (Amount=int64, error?)
+32-37 ValidateHandle validation: name Validate*, returns error
+    named validator
+    params: (h Handle=string), results: (error?)
+46-49 Account json-roundtrip: has json tags
+    fields: (Owner Handle=string, Balance Amount=int64)
