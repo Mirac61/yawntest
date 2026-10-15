@@ -83,7 +83,7 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 	b.execute(validationTemplate, data)
 
 	caseCount := len(cases)
-	if match.NamedValidator && param.Type == "string" {
+	if match.NamedValidator && param.Basic() == "string" {
 		b.execute(rejectsEmptyTemplate, data)
 		caseCount++
 	}
@@ -119,6 +119,13 @@ func (b *builder) validationInput(param detect.Field) (inputType string, cases [
 		return "", nil, false
 	case param.Type != "":
 		return param.Type, b.edgeCases(param.Type), true
+	case param.Underlying != "":
+		// The edge values of the basic type, converted: Slug(""), Slug("😀").
+		var cases []edgeCase
+		for _, edge := range b.edgeCases(param.Underlying) {
+			cases = append(cases, edgeCase{Name: edge.Name, Value: param.Expr + "(" + edge.Value + ")"})
+		}
+		return param.Expr, cases, true
 	case localTypeExpr.MatchString(param.Expr):
 		return param.Expr, localTypeCases(param.Expr), true
 	default:

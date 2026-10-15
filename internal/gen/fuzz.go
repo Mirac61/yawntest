@@ -154,6 +154,17 @@ func (b *builder) fuzzArg(index int, param detect.Field) fuzzArg {
 	if paramName == "" || reservedNames[paramName] {
 		paramName = fmt.Sprintf("arg%d", index)
 	}
+	// A type of the package like Slug is fuzzed as its basic type and converted for the call.
+	if param.Type == "" && param.Underlying != "" {
+		raw := paramName + "Raw"
+		return fuzzArg{
+			name:     raw,
+			fuzzType: param.Underlying,
+			seeds:    values(b.edgeCases(param.Underlying)),
+			setup:    paramName + " := " + param.Expr + "(" + raw + ")",
+			callArg:  paramName,
+		}
+	}
 	elemType, kind := splitSlice(param.Type)
 
 	fuzzName := paramName

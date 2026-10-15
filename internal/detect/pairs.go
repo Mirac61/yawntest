@@ -63,13 +63,13 @@ func (p *Package) roundtrip(fset *token.FileSet, encode *ast.FuncDecl, e env) (M
 		return Match{}, false
 	}
 
-	encodeParams, encodeResults := fields(encode.Type.Params, e.imports), fields(encode.Type.Results, e.imports)
+	encodeParams, encodeResults := p.withUnderlying(fields(encode.Type.Params, e.imports)), fields(encode.Type.Results, e.imports)
 	decodeParams, decodeResults := fields(decode.decl.Type.Params, decode.imports), fields(decode.decl.Type.Results, decode.imports)
 	if len(encodeParams) != 1 || len(decodeParams) != 1 {
 		return Match{}, false
 	}
 	input := encodeParams[0]
-	if !roundtripInputTypes[input.Type] {
+	if !roundtripInputTypes[input.Basic()] {
 		return Match{}, false
 	}
 	encoded, encodeOK := valueAndError(encodeResults)

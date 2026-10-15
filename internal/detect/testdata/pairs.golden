@@ -23,13 +23,13 @@
 36-36 ParseCount pure-func: basic params, no I/O
     params: (s string), results: (int64, error?)
 53-60 ParseColor pure-func: basic params, no I/O
-    params: (s string), results: (Color?, error?)
+    params: (s string), results: (Color=int, error?)
 53-60 ParseColor enum-roundtrip: Color has String and consts
     partner: Color
     consts: Red, Green, Blue
     params: (s string), results: (Color?, error?)
 69-69 ParseSize pure-func: basic params, no I/O
-    params: (s string), results: (Size?, error?)
+    params: (s string), results: (Size=int, error?)
 72-72 NormalizeTag pure-func: basic params, no I/O
     invariant: idempotent
     params: (tag string), results: (string)

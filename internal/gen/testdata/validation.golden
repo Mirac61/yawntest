@@ -116,7 +116,14 @@ func TestYawntest_CheckSlug(t *testing.T) {
 		name  string
 		input Slug
 	}{
-		{name: "zero value"},
+		{name: "empty", input: Slug("")},
+		{name: "space", input: Slug(" ")},
+		{name: "single char", input: Slug("a")},
+		{name: "very long", input: Slug(strings.Repeat("x", 10000))},
+		{name: "unicode", input: Slug("ünïcødé")},
+		{name: "emoji", input: Slug("😀")},
+		{name: "null byte", input: Slug("\x00")},
+		{name: "sql injection", input: Slug("' OR 1=1 --")},
 	}
 
 	for _, test := range tests {
@@ -129,6 +136,18 @@ func TestYawntest_CheckSlug(t *testing.T) {
 			ok := CheckSlug(test.input)
 			t.Skipf("TODO(yawntest): expected result for %s; got %v", test.name, ok)
 		})
+	}
+}
+
+// yawntest: validation / empty input is rejected
+func TestYawntest_CheckSlug_RejectsEmpty(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("panic: %v", r)
+		}
+	}()
+	if CheckSlug("") {
+		t.Error("CheckSlug(\"\") returned true, want false for empty input")
 	}
 }
 

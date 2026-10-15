@@ -13,6 +13,7 @@ import (
 type Package struct {
 	funcs  map[string][]*funcInfo // "Name" or "Type.Name"; several for build-constrained variants
 	consts map[string][]string    // type name → typed consts, in source order
+	basics map[string]string      // type name → basic type, for `type Slug string`
 	files  []*ast.File
 
 	// With type information (SetTypes), calls are resolved to what they really call, in this
@@ -67,7 +68,7 @@ type funcInfo struct {
 // NewPackage indexes the non-test files of one directory, generated files included: their
 // funcs don't become candidates, but a generated helper doing I/O still makes its callers impure.
 func NewPackage(files []*ast.File) *Package {
-	pkg := &Package{funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, files: files}
+	pkg := &Package{funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, basics: map[string]string{}, files: files}
 	for _, file := range files {
 		imports := newImportTable(file)
 		for _, decl := range file.Decls {
@@ -77,6 +78,7 @@ func NewPackage(files []*ast.File) *Package {
 				pkg.funcs[key] = append(pkg.funcs[key], &funcInfo{decl: decl, imports: imports})
 			case *ast.GenDecl:
 				pkg.addConsts(decl)
+				pkg.addBasics(decl)
 			}
 		}
 	}
@@ -110,6 +112,31 @@ func (p *Package) addConsts(decl *ast.GenDecl) {
 			}
 		}
 	}
+}
+
+// addBasics records the package's types defined as a basic type: type Slug string.
+func (p *Package) addBasics(decl *ast.GenDecl) {
+	if decl.Tok != token.TYPE {
+		return
+	}
+	for _, spec := range decl.Specs {
+		typeSpec := spec.(*ast.TypeSpec)
+		ident, ok := typeSpec.Type.(*ast.Ident)
+		if ok && typeSpec.TypeParams == nil && basicTypes[ident.Name] {
+			p.basics[typeSpec.Name.Name] = ident.Name
+		}
+	}
+}
+
+// withUnderlying fills in Underlying for fields of a basic type of the package, as written
+// without a package qualifier: gen converts to them in a test of the same package.
+func (p *Package) withUnderlying(fields []Field) []Field {
+	for i, field := range fields {
+		if field.Type == "" {
+			fields[i].Underlying = p.basics[field.Expr]
+		}
+	}
+	return fields
 }
 
 // hasSideEffects reports whether fn, or a func or method of this package it calls, does I/O.

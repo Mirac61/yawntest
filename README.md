@@ -73,7 +73,7 @@ need setup never cause a `1`, so `yawntest check` and `yawntest run` can gate CI
 |---|---|---|
 | `http-handler` | `func(http.ResponseWriter, *http.Request)`, function or method, or a constructor returning `http.HandlerFunc` | Empty request must not give a 5xx. If the body is decoded as JSON: invalid and empty bodies must give a 4xx |
 | `json-roundtrip` | Exported struct with `json` tags | Fills every field with a non-zero value, marshals, unmarshals, compares with `reflect.DeepEqual` |
-| `pure-func` | Exported function, only basic-typed params (numbers, strings, bools, `time.Time`, slices of them), has a result, no I/O in its body | Native Go fuzz test seeded with edge values. Checks no panic and that two calls return the same result |
+| `pure-func` | Exported function, only basic-typed params (numbers, strings, bools, `time.Time`, slices of them, or a type of the package defined as one, like `type Slug string`), has a result, no I/O in its body | Native Go fuzz test seeded with edge values. Checks no panic and that two calls return the same result |
 | `validation` | Returns only `error` or `bool` and is named `Validate*`, `IsValid*`, `Check*`, or takes a single string. No I/O in its body | Table of edge inputs that must not panic. The expected result is a `TODO(yawntest)` with `t.Skip`, since that's your decision. Named validators also get "empty input is rejected" |
 | `roundtrip` | Two pure funcs `FormatX`/`ParseX` (also `Encode`/`Decode`, `Marshal`/`Unmarshal`, `Escape`/`Unescape`, `Quote`/`Unquote`, `Compress`/`Decompress`, `Serialize`/`Deserialize`, `To`/`From`) whose types line up: `T → U` and `U → T`, either side may also return an error | Fuzz test: decoding what was encoded gives the input back, and decoding never fails on it. Inputs are strings, `[]byte`, integers and bools |
 | `enum-roundtrip` | `ParseX(string) (T, error)` where `T` has a `String() string` method and typed consts, iota blocks included | Table test: `ParseX(c.String())` gives back `c` for every const. Names like `Unknown`, `Invalid`, `numX` or `maxX` are left out |
@@ -353,6 +353,8 @@ build, yawntest falls back to syntax for it. Some things still slip through:
   it comes from, not by what the implementation does.
 - Slices are fuzzed with one element. Nil and empty slices are only covered in validator tables.
 - Pointers, maps and nested structs stay at their zero value in JSON round trips.
+- Types like `type Slug string` are fuzzed when they're defined in the same package. One from
+  another package (`ids.Slug`) or a slice of them (`[]Slug`) still counts as unsupported.
 - "Tested" means a test file mentions the name or the package's tests run the func. Structs
   have nothing to run, so for them only the name counts.
 - Constructors with params (`NewHandler(db)`) are skipped.

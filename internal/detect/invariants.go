@@ -72,7 +72,8 @@ func normalizes(funcName string, params, results []Field) bool {
 		return false
 	}
 	param, result := params[0], results[0]
-	scalar := param.Type != "" && !strings.HasPrefix(param.Type, "[]") && !strings.HasPrefix(param.Type, "...")
+	basic := param.Basic()
+	scalar := basic != "" && !strings.HasPrefix(basic, "[]") && !strings.HasPrefix(basic, "...")
 	if !scalar || param.Expr != result.Expr {
 		return false
 	}

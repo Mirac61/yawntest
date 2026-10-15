@@ -40,7 +40,8 @@ func (b *builder) roundtrip(match detect.Match) string {
 
 	var fields []fieldValue
 	for _, field := range match.Fields {
-		value := b.sample(field.Type)
+		// Untyped constants like "yawntest" or 1 also fit a field of type Slug or Cents.
+		value := b.sample(field.Basic())
 		if value != "" {
 			fields = append(fields, fieldValue{Name: field.Name, Value: value})
 		}

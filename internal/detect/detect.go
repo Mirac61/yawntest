@@ -45,7 +45,10 @@ func (p *Package) File(fset *token.FileSet, file *ast.File) []Match {
 			}
 			matches = append(matches, p.funcPairs(fset, decl, e)...)
 		case *ast.GenDecl:
-			matches = append(matches, matchJSONStructs(fset, decl, e.imports)...)
+			for _, match := range matchJSONStructs(fset, decl, e.imports) {
+				match.Fields = p.withUnderlying(match.Fields)
+				matches = append(matches, match)
+			}
 		}
 	}
 	return matches
@@ -69,8 +72,8 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, e env) (Match, bool) {
 		}
 
 		match := newMatch(fset, fn, funcName(fn), detector.pattern, reason)
-		match.Params = fields(fn.Type.Params, imports)
-		match.Results = fields(fn.Type.Results, imports)
+		match.Params = e.pkg.withUnderlying(fields(fn.Type.Params, imports))
+		match.Results = e.pkg.withUnderlying(fields(fn.Type.Results, imports))
 		match.NamedValidator = detector.pattern == PatternValidation && validationPrefix(fn.Name.Name) != ""
 		match.DecodesJSON = detector.pattern == PatternHTTPHandler && decodesJSON(fn.Body, imports)
 		if detector.pattern == PatternPureFunc {
