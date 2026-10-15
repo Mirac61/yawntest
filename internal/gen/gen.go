@@ -69,6 +69,10 @@ func (b *builder) add(match detect.Match) (summary string, ok bool) {
 		return b.httpHandler(match)
 	case detect.PatternValidation:
 		return b.validation(match)
+	case detect.PatternRoundtrip:
+		return b.pairRoundtrip(match), true
+	case detect.PatternEnumRoundtrip:
+		return b.enumRoundtrip(match), true
 	default:
 		return "", false
 	}

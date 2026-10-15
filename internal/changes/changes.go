@@ -32,6 +32,12 @@ func (f File) Touches(start, end int) bool {
 
 // SinceHEAD returns uncommitted and untracked changes of the repo around dir, keyed by resolved absolute path.
 func SinceHEAD(dir string) (map[string]File, error) {
+	return Since(dir, "")
+}
+
+// Since returns what a pull request against ref changes: everything since the merge base of
+// ref and HEAD, uncommitted and untracked work included. An empty ref means HEAD.
+func Since(dir, ref string) (map[string]File, error) {
 	output, err := git(dir, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return nil, err
@@ -41,7 +47,16 @@ func SinceHEAD(dir string) (map[string]File, error) {
 		return nil, err
 	}
 
-	diff, err := git(top, "diff", "--unified=0", "--no-color", "--no-ext-diff", "HEAD")
+	base := "HEAD"
+	if ref != "" {
+		output, err := git(top, "merge-base", ref, "HEAD")
+		if err != nil {
+			return nil, fmt.Errorf("no common history with %s (in CI, fetch it with fetch-depth: 0): %w", ref, err)
+		}
+		base = strings.TrimSpace(output)
+	}
+
+	diff, err := git(top, "diff", "--unified=0", "--no-color", "--no-ext-diff", base)
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +167,21 @@ func KeepChangedFiles(files []scan.File, changed map[string]File) ([]scan.File, 
 	var kept []scan.File
 	for _, file := range files {
 		if touched[file.Path] {
+			kept = append(kept, file)
+		}
+	}
+	return kept, nil
+}
+
+// KeepTouched keeps the files with any changed line, e.g. to run coverage only where it can matter.
+func KeepTouched(files []scan.File, changed map[string]File) ([]scan.File, error) {
+	var kept []scan.File
+	for _, file := range files {
+		fileChanges, err := lookup(changed, file.Path)
+		if err != nil {
+			return nil, err
+		}
+		if fileChanges.All || len(fileChanges.Lines) > 0 {
 			kept = append(kept, file)
 		}
 	}

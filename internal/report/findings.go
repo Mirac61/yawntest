@@ -13,6 +13,8 @@ import (
 
 // failure is one generated test func that failed, its failed cases folded in.
 type failure struct {
+	file    string // shop/order.go, empty if the source is unknown
+	line    int
 	where   string // shop/order.go:30, or the dir if the source is unknown
 	name    string // Split, or the test name
 	message string
@@ -73,21 +75,22 @@ func group(findings []run.Finding, generated []GeneratedFile) []failure {
 		}
 
 		index[key] = len(failures)
-		where, name := locate(finding.Dir, testFunc, generated)
-		failures = append(failures, failure{where: where, name: name, message: finding.Message, cases: 1})
+		located := locate(finding.Dir, testFunc, generated)
+		located.message, located.cases = finding.Message, 1
+		failures = append(failures, located)
 	}
 	return failures
 }
 
 // locate finds the match a test func was generated for, the longest name winning:
 // TestYawntest_Server_Create_BadInput belongs to Server.Create, not Server.
-func locate(dir, testFunc string, generated []GeneratedFile) (where, name string) {
+func locate(dir, testFunc string, generated []GeneratedFile) failure {
 	if testFunc == "" {
-		return dir, "build failed"
+		return failure{where: dir, name: "build failed"}
 	}
 	rest := strings.TrimPrefix(strings.TrimPrefix(testFunc, "TestYawntest_"), "FuzzYawntest_")
 
-	where, name = dir, rest
+	located := failure{where: dir, name: rest}
 	longest := 0
 	for _, file := range generated {
 		if filepath.Clean(filepath.Dir(file.Source)) != filepath.Clean(dir) {
@@ -98,11 +101,16 @@ func locate(dir, testFunc string, generated []GeneratedFile) (where, name string
 			fits := rest == prefix || strings.HasPrefix(rest, prefix+"_")
 			if fits && len(prefix) > longest {
 				longest = len(prefix)
-				where, name = fmt.Sprintf("%s:%d", file.Source, test.Match.Line), test.Match.Name
+				located = failure{
+					file:  file.Source,
+					line:  test.Match.Line,
+					where: fmt.Sprintf("%s:%d", file.Source, test.Match.Line),
+					name:  test.Match.Name,
+				}
 			}
 		}
 	}
-	return where, name
+	return located
 }
 
 func writeFailures(w io.Writer, marker string, failures []failure, withMessage bool) error {

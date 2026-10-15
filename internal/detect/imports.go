@@ -63,3 +63,9 @@ func (imports importTable) isMember(expr ast.Expr, pkgPath, member string) bool 
 	gotPath, gotMember, ok := imports.resolve(expr)
 	return ok && gotPath == pkgPath && gotMember == member
 }
+
+// ImportNames maps the names a file refers to its imports by onto their paths, so callers
+// can tell strings.Split from a call to the package's own Split.
+func ImportNames(file *ast.File) map[string]string {
+	return newImportTable(file)
+}

@@ -26,7 +26,15 @@ type options struct {
 	root    string
 	force   bool
 	changed bool
-	json    bool
+	since   string // git ref; like changed, but since the merge base with it
+	static  bool   // run no tests
+	format  string // text, json or github
+	json    bool   // --json, folded into format by parseArgs
+}
+
+// filtered reports whether only changed code counts.
+func (o options) filtered() bool {
+	return o.changed || o.since != ""
 }
 
 var versionArgs = []string{"version", "-version", "--version"}
@@ -57,11 +65,16 @@ func main() {
 		os.Exit(exitError)
 	}
 
-	report.Color = !opts.json && isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == ""
+	report.Color = opts.format == "text" && isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == ""
 	result := collect(opts)
-	if opts.json {
+	switch opts.format {
+	case "json":
 		mustReport(report.JSON(os.Stdout, result))
-	} else {
+	case "github":
+		mustReport(report.GitHub(os.Stdout, result))
+		printText(opts, result)
+	default:
+		printWarnings(result.Warnings)
 		printText(opts, result)
 	}
 	if result.HasProblems() {
@@ -70,11 +83,24 @@ func main() {
 }
 
 func collect(opts options) report.Result {
-	if opts.command == "check" {
-		return check(opts)
+	tree := must(scan.Scan(opts.root))
+	result := report.Result{}
+	for _, broken := range tree.Broken {
+		result.Warnings = append(result.Warnings, fmt.Sprintf("skipped %s, it doesn't parse: %v", broken.Path, broken.Err))
 	}
 
-	result := report.Result{Generated: generate(opts)}
+	var changed map[string]changes.File
+	if opts.filtered() {
+		changed = must(changes.Since(opts.root, opts.since))
+	}
+	coverage := run.NewCoverage()
+
+	if opts.command == "check" {
+		check(opts, tree, changed, coverage, &result)
+		return result
+	}
+
+	result.Generated = generate(opts, tree, changed, coverage)
 	if opts.command == "run" {
 		dirs := must(scan.Dirs(opts.root, scan.IsYawntestFile))
 		result.Findings = must(run.YawntestTests(dirs))
@@ -86,7 +112,9 @@ func printText(opts options, result report.Result) {
 	if opts.command == "check" {
 		mustReport(report.Untested(os.Stdout, result.Untested))
 		mustReport(report.Hints(os.Stdout, result.Untested))
-		mustReport(report.ErrorPaths(os.Stdout, result.ErrorPaths))
+		if !opts.static {
+			mustReport(report.ErrorPaths(os.Stdout, result.ErrorPaths, result.NoTests))
+		}
 		return
 	}
 
@@ -96,27 +124,42 @@ func printText(opts options, result report.Result) {
 	}
 }
 
-func check(opts options) report.Result {
-	files := must(scan.Untested(opts.root, true))
-	sourceDirs := must(scan.Dirs(opts.root, scan.IsSourceFile))
-	errorPaths := must(run.UntestedErrorPaths(sourceDirs))
-	if opts.changed {
-		changed := must(changes.SinceHEAD(opts.root))
-		files = must(changes.KeepChangedMatches(files, changed))
-		errorPaths = must(changes.KeepChangedErrorPaths(errorPaths, changed))
+func printWarnings(warnings []string) {
+	for _, warning := range warnings {
+		fmt.Fprintln(os.Stderr, "yawntest: warning:", warning)
 	}
-	files = must(run.WithoutCovered(files))
-	return report.Result{Untested: files, ErrorPaths: errorPaths}
+}
+
+// check fills result; changed is nil unless only changed code counts.
+func check(opts options, tree scan.Tree, changed map[string]changes.File, coverage *run.Coverage, result *report.Result) {
+	files := tree.Untested(true)
+	sources := tree.Files
+	if changed != nil {
+		files = must(changes.KeepChangedMatches(files, changed))
+		sources = must(changes.KeepTouched(sources, changed))
+	}
+	if !opts.static {
+		errorPaths := run.UntestedErrorPaths(sources, tree.HasTests, coverage)
+		result.ErrorPaths = errorPaths.Paths
+		if changed != nil {
+			result.ErrorPaths = must(changes.KeepChangedErrorPaths(result.ErrorPaths, changed))
+		}
+		result.NoTests = errorPaths.NoTests
+		result.Warnings = append(result.Warnings, errorPaths.Warnings...)
+		files = run.WithoutCovered(files, coverage, false)
+	}
+	result.Untested = files
 }
 
 // Without --force existing yawntest files count as tests, so only sources with new candidates show up.
-func generate(opts options) []report.GeneratedFile {
-	files := must(scan.Untested(opts.root, !opts.force))
-	if opts.changed {
-		changed := must(changes.SinceHEAD(opts.root))
+func generate(opts options, tree scan.Tree, changed map[string]changes.File, coverage *run.Coverage) []report.GeneratedFile {
+	files := tree.Untested(!opts.force)
+	if changed != nil {
 		files = must(changes.KeepChangedFiles(files, changed))
 	}
-	files = must(run.WithoutCovered(files))
+	if !opts.static {
+		files = run.WithoutCovered(files, coverage, true)
+	}
 
 	var results []report.GeneratedFile
 	for _, file := range files {

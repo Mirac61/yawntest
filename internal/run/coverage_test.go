@@ -1,9 +1,6 @@
 package run
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -24,33 +21,6 @@ func TestParseProfile(t *testing.T) {
 	}
 	if !slices.Equal(blocks, want) {
 		t.Errorf("blocks = %+v, want %+v", blocks, want)
-	}
-}
-
-func TestReturnsErr(t *testing.T) {
-	tests := []struct {
-		code string
-		want bool
-	}{
-		{code: "return err", want: true},
-		{code: "return 0, err", want: true},
-		{code: `return 0, fmt.Errorf("parse: %w", err)`, want: true},
-		{code: "return nil", want: false},
-		{code: `return 0, errors.New("boom")`, want: false},
-		{code: "return", want: false},
-	}
-
-	for _, test := range tests {
-		t.Run(test.code, func(t *testing.T) {
-			file, err := parser.ParseFile(token.NewFileSet(), "x.go", "package x\nfunc f() {\n"+test.code+"\n}\n", 0)
-			if err != nil {
-				t.Fatalf("parse: %v", err)
-			}
-			ret := file.Decls[0].(*ast.FuncDecl).Body.List[0].(*ast.ReturnStmt)
-			if got := returnsErr(ret); got != test.want {
-				t.Errorf("returnsErr(%s) = %v, want %v", test.code, got, test.want)
-			}
-		})
 	}
 }
 
@@ -86,10 +56,11 @@ func MustParse(s string) int {
 `)
 	writeFile(t, dir, "parse_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestParse(t *testing.T) { Parse(\"1\") }\n")
 
-	paths, err := UntestedErrorPaths([]string{dir})
+	tree, err := scan.Scan(dir)
 	if err != nil {
-		t.Fatalf("coverage: %v", err)
+		t.Fatalf("scan: %v", err)
 	}
+	paths := UntestedErrorPaths(tree.Files, tree.HasTests, NewCoverage()).Paths
 	want := []ErrorPath{{
 		File: filepath.Join(dir, "parse.go"),
 		Line: 11,
@@ -110,9 +81,14 @@ func TestUntestedErrorPathsBrokenTests(t *testing.T) {
 	writeFile(t, dir, "parse.go", "package cover\n\nimport \"strconv\"\n\nfunc Parse(s string) (int, error) {\n\tn, err := strconv.Atoi(s)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\treturn n, nil\n}\n")
 	writeFile(t, dir, "parse_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestParse(t *testing.T) { undefined() }\n")
 
-	// Without the error, the empty profile would report every error return as reached.
-	if paths, err := UntestedErrorPaths([]string{dir}); err == nil {
-		t.Errorf("got paths %+v and no error, want an error for tests that don't build", paths)
+	tree, err := scan.Scan(dir)
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	// Without the warning, the empty profile would report every error return as reached.
+	got := UntestedErrorPaths(tree.Files, tree.HasTests, NewCoverage())
+	if len(got.Paths) != 0 || len(got.Warnings) != 1 {
+		t.Errorf("got %+v, want no paths and one warning for tests that don't build", got)
 	}
 }
 
@@ -150,14 +126,11 @@ func route(op string, n int) int {
 	// --force: yawntest's own tests must not count, or their files would never be rewritten.
 	writeFile(t, dir, "calc_yawntest_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestYawntest_Quadruple(t *testing.T) { route(\"\", 1) }\n")
 
-	files, err := scan.Untested(dir, false)
+	tree, err := scan.Scan(dir)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
-	files, err = WithoutCovered(files)
-	if err != nil {
-		t.Fatalf("coverage: %v", err)
-	}
+	files := WithoutCovered(tree.Untested(false), NewCoverage(), true)
 
 	var got []string
 	for _, file := range files {
@@ -182,15 +155,12 @@ func TestWithoutCoveredBrokenTests(t *testing.T) {
 	writeFile(t, dir, "calc.go", "package cover\n\nfunc Double(n int) int { return n * 2 }\n")
 	writeFile(t, dir, "calc_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestX(t *testing.T) { undefined() }\n")
 
-	files, err := scan.Untested(dir, true)
+	tree, err := scan.Scan(dir)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
 	// Generation must still work when the user's tests are broken, so the names decide alone.
-	files, err = WithoutCovered(files)
-	if err != nil {
-		t.Fatalf("coverage: %v", err)
-	}
+	files := WithoutCovered(tree.Untested(true), NewCoverage(), true)
 	if len(files) != 1 || len(files[0].Matches) != 1 {
 		t.Errorf("files = %+v, want Double kept", files)
 	}

@@ -1,6 +1,8 @@
 package scan
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 )
@@ -25,10 +27,11 @@ func TestUntested(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			files, err := Untested("testdata", test.countYawntest)
+			tree, err := Scan("testdata")
 			if err != nil {
 				t.Fatalf("scan: %v", err)
 			}
+			files := tree.Untested(test.countYawntest)
 
 			var names []string
 			hintCount := 0
@@ -94,5 +97,68 @@ func TestSkipDir(t *testing.T) {
 				t.Errorf("skipDir(%q) = %v, want %v", test.name, got, test.want)
 			}
 		})
+	}
+}
+
+func TestScanTree(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, src string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("text.go", `package text
+
+import "strings"
+
+// Split is untested: the test below only calls strings.Split.
+func Split(s string) []string { return strings.Fields(s) }
+
+// Upper is tested through text.Upper in the external test package.
+func Upper(s string) string { return strings.ToUpper(s) }
+
+// Shout calls a helper in another file that prints, so it isn't pure.
+func Shout(s string) string { return say(s) }
+
+//yawntest:ignore covered by the e2e suite
+func Ignored(s string) string { return s }
+`)
+	write("say.go", "package text\n\nimport \"fmt\"\n\nfunc say(s string) string { fmt.Println(s); return s }\n")
+	write("broken.go", "package text\n\nfunc {\n")
+	write("text_test.go", `package text_test
+
+import (
+	"strings"
+	"testing"
+
+	"example.com/text"
+)
+
+func TestX(t *testing.T) {
+	_ = strings.Split("a b", " ")
+	_ = text.Upper("a")
+}
+`)
+
+	tree, err := Scan(dir)
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if len(tree.Broken) != 1 || filepath.Base(tree.Broken[0].Path) != "broken.go" {
+		t.Errorf("broken = %+v, want broken.go only", tree.Broken)
+	}
+	if !tree.HasTests(dir) {
+		t.Error("HasTests = false, want true")
+	}
+
+	var names []string
+	for _, file := range tree.Untested(true) {
+		for _, match := range file.Matches {
+			names = append(names, match.Name)
+		}
+	}
+	if want := []string{"Split"}; !slices.Equal(names, want) {
+		t.Errorf("untested = %v, want %v", names, want)
 	}
 }

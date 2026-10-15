@@ -39,6 +39,13 @@ func FuzzYawntest_{{.Func}}(f *testing.F) {
 			t.Errorf("{{.Func}}({{.ArgFormat}}) parts add up to %v, want the total %v", {{.Args}}, sum, {{.Total}})
 		}
 {{- end}}
+{{- if .Idempotent}}
+
+		twice := {{.Func}}(got)
+		if !reflect.DeepEqual(twice, got) && fmt.Sprint(twice) != fmt.Sprint(got) {
+			t.Errorf("{{.Func}}({{.Func}}({{.ArgFormat}})) = %v, want %v: a second pass changed the result again", {{.Args}}, twice, got)
+		}
+{{- end}}
 {{- if .EndNotBeforeStart}}
 
 		if got1.Before(got0) {
@@ -51,7 +58,8 @@ func FuzzYawntest_{{.Func}}(f *testing.F) {
 
 // Names a fuzz arg must not take: the closure's own names and the packages it uses.
 var reservedNames = map[string]bool{
-	"_": true, "t": true, "f": true, "got": true, "again": true,
+	"_": true, "t": true, "f": true, "got": true, "again": true, "twice": true,
+	"encoded": true, "decoded": true, "err": true, "text": true, "bytes": true,
 	"fmt": true, "math": true, "reflect": true, "strings": true, "testing": true, "time": true,
 }
 
@@ -109,6 +117,7 @@ func (b *builder) fuzz(match detect.Match) string {
 		"Total":             args[0].callArg,
 		"TotalType":         match.Params[0].Type,
 		"EndNotBeforeStart": match.Invariant == detect.InvariantEndNotBeforeStart,
+		"Idempotent":        match.Invariant == detect.InvariantIdempotent,
 	})
 
 	summary := fmt.Sprintf("fuzz, %d seeds", len(seeds))
