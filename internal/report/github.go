@@ -5,33 +5,106 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
-// GitHub prints the result as workflow commands, which GitHub Actions turns into annotations
-// on the lines of a pull request. The runner hides the commands themselves from the log.
-func GitHub(w io.Writer, result Result) error {
-	a := annotator{w: w, workspace: os.Getenv("GITHUB_WORKSPACE")}
+// issue is one thing to point at in the code. GitHub annotations and SARIF are both made from
+// the same list, so they can't drift apart.
+type issue struct {
+	rule    string // untested/pure-func, hint/money, error-path, finding, warning
+	level   string // notice, warning or error, as GitHub calls them
+	file    string // empty for warnings about yawntest's own run
+	line    int
+	title   string
+	message string
+}
+
+// rank orders issues by how much they matter, for when GitHub shows only some of them.
+var rank = map[string]int{"finding": 0, "error-path": 1, "hint": 2, "untested": 3, "warning": 4}
+
+func issues(result Result) []issue {
+	var all []issue
 	for _, file := range result.Untested {
 		for _, match := range file.Matches {
-			a.write("notice", file.Path, match.Line, "yawntest: untested "+string(match.Pattern),
-				fmt.Sprintf("%s has no test yet (%s). `yawntest gen` writes one.", match.Name, match.Reason))
+			all = append(all, issue{
+				rule: "untested/" + string(match.Pattern), level: "notice", file: file.Path, line: match.Line,
+				title:   "yawntest: untested " + string(match.Pattern),
+				message: fmt.Sprintf("%s has no test yet (%s). `yawntest gen` writes one.", match.Name, match.Reason),
+			})
 		}
 		for _, hint := range file.Hints {
-			a.write("warning", file.Path, hint.Line, "yawntest: "+hint.Domain, hint.Message)
+			all = append(all, issue{
+				rule: "hint/" + hint.Domain, level: "warning", file: file.Path, line: hint.Line,
+				title: "yawntest: " + hint.Domain, message: hint.Message,
+			})
 		}
 	}
 	for _, path := range result.ErrorPaths {
-		a.write("warning", path.File, path.Line, "yawntest: untested error path", "No test reaches this return: "+path.Code)
+		all = append(all, issue{
+			rule: "error-path", level: "warning", file: path.File, line: path.Line,
+			title: "yawntest: untested error path", message: "No test reaches this return in " + path.Func + ": " + path.Code,
+		})
 	}
 	real, _ := splitFindings(result.Findings)
 	for _, failure := range group(real, result.Generated) {
-		a.write("error", failure.file, failure.line, "yawntest finding: "+failure.name, failure.message)
+		all = append(all, issue{
+			rule: "finding", level: "error", file: failure.file, line: failure.line,
+			title: "yawntest finding: " + failure.name, message: failure.message + "\nRerun: " + failure.rerun,
+		})
 	}
 	for _, warning := range result.Warnings {
-		a.write("warning", "", 0, "yawntest", warning)
+		all = append(all, issue{rule: "warning", level: "warning", title: "yawntest", message: warning})
+	}
+	return all
+}
+
+// GitHub shows 10 annotations per level and step and drops the rest without a word.
+const annotationsPerLevel = 10
+
+// GitHub prints the result as workflow commands, which GitHub Actions turns into annotations
+// on the lines of a pull request. The runner hides the commands themselves from the log.
+// The most important issues go first, and a last notice says how many didn't fit.
+func GitHub(w io.Writer, result Result) error {
+	all := issues(result)
+	slices.SortStableFunc(all, func(a, b issue) int { return rank[ruleKind(a.rule)] - rank[ruleKind(b.rule)] })
+
+	// Decide the limits first: if anything is dropped, the notice saying so needs a slot of
+	// its own among the notices, or GitHub drops that one too.
+	total := map[string]int{}
+	for _, issue := range all {
+		total[issue.level]++
+	}
+	limit := map[string]int{"notice": annotationsPerLevel, "warning": annotationsPerLevel, "error": annotationsPerLevel}
+	if total["notice"] > annotationsPerLevel || total["warning"] > annotationsPerLevel || total["error"] > annotationsPerLevel {
+		limit["notice"]--
+	}
+
+	a := annotator{w: w, workspace: os.Getenv("GITHUB_WORKSPACE")}
+	shown := map[string]int{}
+	dropped := 0
+	for _, issue := range all {
+		if shown[issue.level] >= limit[issue.level] {
+			dropped++
+			continue
+		}
+		shown[issue.level]++
+		a.write(issue)
+	}
+	if dropped > 0 {
+		a.write(issue{
+			level: "notice", title: "yawntest",
+			message: fmt.Sprintf("%d more %s not shown here: GitHub shows %d per kind and step. "+
+				"The job summary has the full report; --format sarif with code scanning shows every one.",
+				dropped, strings.TrimPrefix(plural(dropped, "issue"), fmt.Sprint(dropped)+" "), annotationsPerLevel),
+		})
 	}
 	return a.err
+}
+
+func ruleKind(rule string) string {
+	kind, _, _ := strings.Cut(rule, "/")
+	return kind
 }
 
 type annotator struct {
@@ -40,23 +113,25 @@ type annotator struct {
 	err       error
 }
 
-func (a *annotator) write(level, file string, line int, title, message string) {
+func (a *annotator) write(issue issue) {
 	if a.err != nil {
 		return
 	}
 	var properties []string
-	if file != "" {
-		properties = append(properties, "file="+escapeProperty(a.relative(file)))
-		if line > 0 {
-			properties = append(properties, fmt.Sprintf("line=%d", line))
+	if issue.file != "" {
+		properties = append(properties, "file="+escapeProperty(repoPath(a.workspace, issue.file)))
+		if issue.line > 0 {
+			properties = append(properties, fmt.Sprintf("line=%d", issue.line))
 		}
 	}
-	properties = append(properties, "title="+escapeProperty(title))
-	_, a.err = fmt.Fprintf(a.w, "::%s %s::%s\n", level, strings.Join(properties, ","), escapeData(message))
+	properties = append(properties, "title="+escapeProperty(issue.title))
+	_, a.err = fmt.Fprintf(a.w, "::%s %s::%s\n", issue.level, strings.Join(properties, ","), escapeData(issue.message))
 }
 
-func (a *annotator) relative(path string) string {
-	if a.workspace == "" {
+// repoPath is path relative to the workspace, the repo root in GitHub Actions, with slashes.
+// Without a workspace, or outside it, the path stays as it is.
+func repoPath(workspace, path string) string {
+	if workspace == "" {
 		return filepath.ToSlash(path)
 	}
 	absolute, err := filepath.Abs(path)
@@ -64,7 +139,7 @@ func (a *annotator) relative(path string) string {
 		return filepath.ToSlash(path)
 	}
 	// Both sides resolved: on macOS the workspace may be /var/… while the cwd is /private/var/….
-	relative, err := filepath.Rel(resolveSymlinks(a.workspace), resolveSymlinks(absolute))
+	relative, err := filepath.Rel(resolveSymlinks(workspace), resolveSymlinks(absolute))
 	if err != nil || strings.HasPrefix(relative, "..") {
 		return filepath.ToSlash(path)
 	}

@@ -22,14 +22,15 @@ const (
 )
 
 type options struct {
-	command string // check, gen or run
-	root    string
-	force   bool
-	changed bool
-	since   string // git ref; like changed, but since the merge base with it
-	static  bool   // run no tests
-	format  string // text, json or github
-	json    bool   // --json, folded into format by parseArgs
+	command   string // check, gen or run
+	root      string
+	force     bool
+	changed   bool
+	since     string // git ref; like changed, but since the merge base with it
+	static    bool   // run no tests
+	format    string // text, json, github or sarif
+	sarifFile string // --sarif: also write SARIF here
+	json      bool   // --json, folded into format by parseArgs
 }
 
 // filtered reports whether only changed code counts.
@@ -80,9 +81,15 @@ func main() {
 	case "github":
 		mustReport(report.GitHub(os.Stdout, result))
 		printText(opts, result)
+	case "sarif":
+		printWarnings(result.Warnings) // SARIF has no place for issues without a file
+		mustReport(report.SARIF(os.Stdout, result, version()))
 	default:
 		printWarnings(result.Warnings)
 		printText(opts, result)
+	}
+	if opts.sarifFile != "" {
+		writeSARIF(opts.sarifFile, result)
 	}
 	if result.HasProblems() {
 		os.Exit(exitProblems)
@@ -118,6 +125,20 @@ func collect(opts options) report.Result {
 
 func printText(opts options, result report.Result) {
 	mustReport(report.Text(os.Stdout, result, report.View{Command: opts.command, Static: opts.static}))
+}
+
+func writeSARIF(path string, result report.Result) {
+	file, err := os.Create(path)
+	if err != nil {
+		fail(err)
+	}
+	if err := report.SARIF(file, result, version()); err != nil {
+		file.Close()
+		fail(fmt.Errorf("write %s: %w", path, err))
+	}
+	if err := file.Close(); err != nil {
+		fail(fmt.Errorf("write %s: %w", path, err))
+	}
 }
 
 // statusLine shows "running tests 3/12…" on a terminal's stderr while go test runs, and

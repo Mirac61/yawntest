@@ -53,7 +53,8 @@ yawntest <command> [flags] [path]     # path defaults to ".", "./..." works too
 |---|---|---|
 | `--changed` | all | Only look at code changed since the last commit (`git diff HEAD` plus untracked files) |
 | `--since <ref>` | all | Only look at code changed since the merge base with `ref`, e.g. `origin/main`: what a pull request changes, uncommitted work included |
-| `--format <f>` | all | `text` (default), `json`, or `github` for annotations in GitHub Actions |
+| `--format <f>` | all | `text` (default), `json`, `github` for annotations in GitHub Actions, or `sarif` for code scanning |
+| `--sarif <file>` | all | Also write SARIF to `file`, whatever `--format` prints |
 | `--json` | all | Short for `--format json` |
 | `--static` | `check`, `gen` | Run no tests. Faster, but no error paths, and only names count as tested |
 | `--force` | `gen`, `run` | Overwrite existing yawntest files |
@@ -258,6 +259,12 @@ jobs:
 | `working-directory` | `.` | Where to run, e.g. a module inside a monorepo |
 | `only-changed` | `false` | On pull requests, `--since origin/<base branch>` |
 | `args` | | Extra flags, e.g. `--static` |
+| `sarif` | `false` | Also upload to GitHub code scanning (needs `permissions: security-events: write`) |
+
+GitHub shows at most 10 annotations of each kind per step. yawntest puts the most important
+first (findings, then error paths, hints, candidates) and ends with a notice saying how many
+didn't fit. With `sarif: true` every one of them also goes to code scanning, which has no such
+limit and tracks each issue across runs.
 
 The step fails with the exit code, so it gates the merge. Use `continue-on-error: true` to only
 annotate. Without the action, any CI runs the same thing:
