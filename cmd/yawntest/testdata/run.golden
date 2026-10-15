@@ -1,0 +1,23 @@
+exit 1
+--- stdout
+shop/order.go
+  ✓ Order        json-roundtrip  1 test
+  ✓ CreateOrder  http-handler    3 cases
+  ✓ Split        pure-func       fuzz, 9 seeds, parts sum to total
+  ✓ Initial      pure-func       fuzz, 8 seeds
+shop/status.go
+  ✓ ParseStatus  pure-func       fuzz, 8 seeds
+  ✓ ParseStatus  enum-roundtrip  4 consts
+shop/user.go
+  ✓ ValidateEmail  validation  9 cases (8 expected values TODO)
+
+Wrote 3 files with 7 tests.
+
+Findings, generated tests that fail on your code:
+  ✗ shop/order.go:20   CreateOrder  status = 500, want < 500 for bad input (3 cases)
+  ✗ shop/status.go:30  ParseStatus  ParseStatus("cancelled") failed: unknown status "cancelled", want Cancelled
+  ✗ shop/order.go:30   Split        Split(100, 3) parts add up to 99, want the total 100 (4 cases)
+  ✗ shop/order.go:42   Initial      panic: runtime error: slice bounds out of range [:1] with length 0
+
+4 findings.
+--- stderr

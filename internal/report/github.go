@@ -63,11 +63,25 @@ func (a *annotator) relative(path string) string {
 	if err != nil {
 		return filepath.ToSlash(path)
 	}
-	relative, err := filepath.Rel(a.workspace, absolute)
+	// Both sides resolved: on macOS the workspace may be /var/… while the cwd is /private/var/….
+	relative, err := filepath.Rel(resolveSymlinks(a.workspace), resolveSymlinks(absolute))
 	if err != nil || strings.HasPrefix(relative, "..") {
 		return filepath.ToSlash(path)
 	}
 	return filepath.ToSlash(relative)
+}
+
+// resolveSymlinks resolves the longest part of path that exists, so a file that isn't there
+// (yet) still ends up under the same resolved dir as its siblings.
+func resolveSymlinks(path string) string {
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		return resolved
+	}
+	parent := filepath.Dir(path)
+	if parent == path {
+		return path
+	}
+	return filepath.Join(resolveSymlinks(parent), filepath.Base(path))
 }
 
 var (
