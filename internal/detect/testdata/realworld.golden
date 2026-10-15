@@ -1,0 +1,6 @@
+47-47 Atoi pure-func: basic params, no I/O
+    params: (s string), results: (int, error?)
+50-50 First pure-func: basic params, no I/O
+    params: (s string), results: (byte)
+53-53 Mustard pure-func: basic params, no I/O
+    params: (n int), results: (int)
