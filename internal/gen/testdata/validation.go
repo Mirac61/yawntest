@@ -43,3 +43,8 @@ func ValidateTags(tags []string) error {
 func IsValidDeadline(deadline time.Time) bool { return deadline.After(time.Unix(0, 0)) }
 
 func IsValidName(name string) bool { return strings.TrimSpace(name) != "" }
+
+type node struct{ parent *node }
+
+// checkNode is unexported, so its callers never pass nil: no nil case (urfave/cli).
+func checkNode(n *node) bool { return n.parent == nil }

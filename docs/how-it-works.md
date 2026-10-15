@@ -103,6 +103,11 @@ can't call them.
   package defined as a basic type (`type Slug string`, `type Cents int64`). Those are fuzzed
   as the basic type and converted for the call (`s := Slug(sRaw)`); validators get the edge
   values converted (`Slug("😀")`), and JSON fields of such a type get a value too.
+- No result is a func, a channel, or an interface other than `error`: two calls of
+  `NewMiddleware()` return two closures that never compare equal. With type information this
+  is exact; without, it sees literal types, the package's own named ones and `http.Handler`.
+- Not named `Must*`/`Require*` and no doc comment mentioning a panic: those panic on bad input
+  by design (this applies to every pattern).
 - The body, and every func of the package it calls, touches none of these: `go` statements,
   the packages `os`, `io`, `bufio`, `net`, `net/http`, `database/sql`, `log`, `syscall` and
   the `rand` packages, `time.Now`/`Since`/`Sleep`/`After`/timers, `filepath.Abs`/`Glob`/

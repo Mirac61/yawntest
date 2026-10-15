@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/Mirac61/yawntest/internal/detect"
 )
@@ -74,7 +75,7 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 	}
 
 	param := match.Params[0]
-	inputType, cases, ok := b.validationInput(param)
+	inputType, cases, ok := b.validationInput(param, exported(funcPart(match.Name)))
 	if !ok {
 		return "", false
 	}
@@ -105,7 +106,7 @@ func resultVar(resultType string) string {
 }
 
 // An empty case Value leaves the input at its zero value.
-func (b *builder) validationInput(param detect.Field) (inputType string, cases []edgeCase, ok bool) {
+func (b *builder) validationInput(param detect.Field, exportedFunc bool) (inputType string, cases []edgeCase, ok bool) {
 	switch {
 	case param.Type == "time.Time":
 		b.use("time")
@@ -127,7 +128,7 @@ func (b *builder) validationInput(param detect.Field) (inputType string, cases [
 		}
 		return param.Expr, cases, true
 	case localTypeExpr.MatchString(param.Expr):
-		return param.Expr, localTypeCases(param.Expr), true
+		return param.Expr, localTypeCases(param.Expr, exportedFunc), true
 	default:
 		return "", nil, false
 	}
@@ -145,10 +146,29 @@ func (b *builder) sliceCases(sliceType string) []edgeCase {
 	return cases
 }
 
-func localTypeCases(typeExpr string) []edgeCase {
+// nil is only a case for exported funcs: a caller outside the package may pass it, while an
+// unexported helper is called by code that already checked.
+func localTypeCases(typeExpr string, exported bool) []edgeCase {
 	typeName, isPointer := strings.CutPrefix(typeExpr, "*")
-	if isPointer {
+	switch {
+	case isPointer && exported:
 		return []edgeCase{{Name: "nil"}, {Name: "zero value", Value: "new(" + typeName + ")"}}
+	case isPointer:
+		return []edgeCase{{Name: "zero value", Value: "new(" + typeName + ")"}}
+	default:
+		return []edgeCase{{Name: "zero value"}}
 	}
-	return []edgeCase{{Name: "zero value"}}
+}
+
+// funcPart is Validate for User.Validate.
+func funcPart(name string) string {
+	_, method, isMethod := strings.Cut(name, ".")
+	if isMethod {
+		return method
+	}
+	return name
+}
+
+func exported(name string) bool {
+	return name != "" && unicode.IsUpper([]rune(name)[0])
 }

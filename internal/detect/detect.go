@@ -64,6 +64,11 @@ func matchFunc(fset *token.FileSet, fn *ast.FuncDecl, e env) (Match, bool) {
 	if fn.Recv != nil && receiverTypeName(fn.Recv.List[0].Type) == "" {
 		return Match{}, false
 	}
+	// Every generated test fails on a panic. A func that panics on bad input on purpose
+	// would only produce findings that aren't bugs.
+	if panicsByDesign(fn) {
+		return Match{}, false
+	}
 
 	for _, detector := range funcDetectors {
 		reason, ok := detector.detect(fn, e)
