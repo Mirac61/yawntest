@@ -1,0 +1,7 @@
+urfave/cli at 5a02496198b1
+
+check: 0 candidates, 2 hints (auth 2), 0 error paths, 1 packages without tests
+  hint command_run.go:35 auth: token compared with !=; use subtle.ConstantTimeCompare so the timing doesn't leak it
+  hint command_run.go:57 auth: token compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it
+run --all: 13 tests in 9 files, 0 skipped, 0 findings, 1 need setup
+  warning: no type information for docs, using syntax only: exit status 1: go: updates to go.mod needed; to update it:

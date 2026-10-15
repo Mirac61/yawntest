@@ -1,0 +1,4 @@
+BurntSushi/toml at d733fc535e4a
+
+check: 4 candidates (json-roundtrip 2, pure-func 1, validation 1), 0 hints, 8 error paths, 2 packages without tests
+run --all: 7 tests in 2 files, 0 skipped, 0 findings, 0 need setup
