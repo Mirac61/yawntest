@@ -1,0 +1,17 @@
+name: Feature
+description: A pattern, hint or invariant yawntest should know, or anything else it should do.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: code
+    attributes:
+      label: The code it's about
+      description: For a new pattern, a function it should recognize, and a near miss it shouldn't.
+      render: go
+  - type: textarea
+    id: test
+    attributes:
+      label: The test it should write
+      description: What should hold for every input, whatever the business logic is.
+    validations:
+      required: true
