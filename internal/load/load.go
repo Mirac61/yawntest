@@ -108,16 +108,28 @@ func (l *Loader) list(module, pattern string) error {
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	runErr := cmd.Run()
 
-	decoder := json.NewDecoder(&stdout)
+	count, err := l.add(&stdout)
+	if err != nil {
+		return err
+	}
+	if count == 0 && runErr != nil {
+		return fmt.Errorf("%v: %s", runErr, firstLine(stderr.String()))
+	}
+	return nil
+}
+
+// add reads go list's stream of JSON objects and returns how many packages it held.
+func (l *Loader) add(r io.Reader) (int, error) {
+	decoder := json.NewDecoder(r)
 	count := 0
 	for {
 		var pkg listed
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {
-			break
+			return count, nil
 		}
 		if err != nil {
-			return fmt.Errorf("read go list output: %w", err)
+			return count, fmt.Errorf("read go list output: %w", err)
 		}
 		count++
 		if pkg.Export != "" {
@@ -132,10 +144,6 @@ func (l *Loader) list(module, pattern string) error {
 			l.dirs[pkg.ImportPath] = dir
 		}
 	}
-	if count == 0 && runErr != nil {
-		return fmt.Errorf("%v: %s", runErr, firstLine(stderr.String()))
-	}
-	return nil
 }
 
 // Dir is where the package with this import path lives, for packages of the listed modules.
@@ -148,7 +156,12 @@ func (l *Loader) Dir(path string) (string, bool) {
 // configurations (open_windows.go on Linux) get no type information. Type errors don't stop
 // it: whatever could be resolved is in the Info, and detection falls back to syntax for the rest.
 func (l *Loader) Check(dir string, fset *token.FileSet, files []*ast.File) (string, *types.Info, bool) {
-	pkg, ok := l.packages[filepath.Clean(dir)]
+	// go list reports absolute dirs; the scan walks the path as given, often "./api".
+	absolute, err := filepath.Abs(dir)
+	if err != nil {
+		return "", nil, false
+	}
+	pkg, ok := l.packages[absolute]
 	if !ok {
 		return "", nil, false
 	}
