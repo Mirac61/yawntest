@@ -1,0 +1,75 @@
+name: yawntest
+description: Writes the boring tests for your Go code and annotates untested code, error paths and findings on the pull request.
+author: Mirac61
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  command:
+    description: "check (default), gen or run. run writes the tests into the workspace and reports failing ones as findings."
+    default: check
+  path:
+    description: Package pattern to look at, relative to working-directory.
+    default: ./...
+  working-directory:
+    description: Directory to run in, e.g. the module root of a monorepo.
+    default: .
+  only-changed:
+    description: "On pull requests, look only at code the PR changes. Needs actions/checkout with fetch-depth: 0."
+    default: "false"
+  args:
+    description: Extra flags, e.g. --static or --force.
+    default: ""
+
+outputs:
+  exit-code:
+    description: "0 all good, 1 something to look at, 2 yawntest failed."
+    value: ${{ steps.run.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build yawntest
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        VERSION: ${{ github.action_ref }}
+      run: |
+        if ! command -v go >/dev/null; then
+          echo "::error title=yawntest::Go is not installed; add actions/setup-go before this step."
+          exit 2
+        fi
+        go build -trimpath -ldflags "-X main.stampedVersion=${VERSION}" -o "$RUNNER_TEMP/yawntest" ./cmd/yawntest
+
+    - name: Run yawntest
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        COMMAND: ${{ inputs.command }}
+        PACKAGES: ${{ inputs.path }}
+        ONLY_CHANGED: ${{ inputs.only-changed }}
+        ARGS: ${{ inputs.args }}
+      run: |
+        set -- "$COMMAND" --format github
+        if [ "$ONLY_CHANGED" = "true" ] && [ -n "$GITHUB_BASE_REF" ]; then
+          set -- "$@" --since "origin/$GITHUB_BASE_REF"
+        fi
+        # ARGS is split into words on purpose, so several flags fit into one input.
+        # shellcheck disable=SC2086
+        set -- "$@" $ARGS "$PACKAGES"
+
+        set +e
+        "$RUNNER_TEMP/yawntest" "$@" | tee "$RUNNER_TEMP/yawntest.out"
+        code=${PIPESTATUS[0]}
+        set -e
+
+        {
+          echo "### yawntest $COMMAND"
+          echo '```text'
+          grep -v '^::' "$RUNNER_TEMP/yawntest.out" || true
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        exit "$code"

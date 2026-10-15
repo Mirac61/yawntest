@@ -39,8 +39,15 @@ func (o options) filtered() bool {
 
 var versionArgs = []string{"version", "-version", "--version"}
 
-// version is the module version go install stamped into the binary, "(devel)" for other builds.
+// stampedVersion is set with -ldflags "-X main.stampedVersion=v1.2.3" by the release workflow
+// and the GitHub Action, which build from a source tree without go install's module version.
+var stampedVersion string
+
+// version is the version stamped into the binary, "(devel)" for builds that have none.
 func version() string {
+	if stampedVersion != "" {
+		return stampedVersion
+	}
 	info, ok := debug.ReadBuildInfo()
 	return versionOf(info, ok)
 }
