@@ -35,6 +35,9 @@ runs:
       working-directory: ${{ github.action_path }}
       env:
         VERSION: ${{ github.action_ref }}
+        # The workflow's own settings (-mod=vendor, a go.work) are for its code, not for yawntest.
+        GOFLAGS: ""
+        GOWORK: "off"
       run: |
         if ! command -v go >/dev/null; then
           echo "::error title=yawntest::Go is not installed; add actions/setup-go before this step."

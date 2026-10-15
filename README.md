@@ -317,6 +317,8 @@ it's why some things slip through:
 - "Tested" means a test file mentions the name or the package's tests run the func. Structs
   have nothing to run, so for them only the name counts.
 - Constructors with params (`NewHandler(db)`) are skipped.
+- A roundtrip pair that's lossy on purpose, like `FormatBytes(1234567)` giving `"1.2 MB"`, fails
+  its roundtrip test. Put `//yawntest:ignore` on the format func if that's intended.
 
 ## More
 

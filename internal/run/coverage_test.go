@@ -3,6 +3,7 @@ package run
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -40,6 +41,9 @@ func TestParseProfileBadLines(t *testing.T) {
 // coverProfileOf runs coverProfile against a fake go that writes profile into -coverprofile.
 func coverProfileOf(t *testing.T, profile string) ([]coverBlock, error) {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake go is a shell script")
+	}
 	bin := t.TempDir()
 	script := "#!/bin/sh\nfor arg; do case $arg in -coverprofile=*) printf 'mode: set\\n%s\\n' '" + profile + "' > \"${arg#-coverprofile=}\";; esac; done\n"
 	if err := os.WriteFile(filepath.Join(bin, "go"), []byte(script), 0o755); err != nil {
