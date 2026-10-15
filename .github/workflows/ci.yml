@@ -15,12 +15,17 @@ concurrency:
 
 jobs:
   test:
-    name: gofmt, vet, Tests (${{ matrix.os }})
+    name: gofmt, vet, Tests (${{ matrix.os }}, Go ${{ matrix.go }})
     strategy:
       fail-fast: false
       matrix:
         # macOS too: changes resolves /var vs /private/var symlinks there.
         os: [ubuntu-latest, macos-latest]
+        go: [stable]
+        include:
+          # The oldest Go that go.mod promises.
+          - os: ubuntu-latest
+            go: "1.23"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -29,7 +34,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: go.mod
+          go-version: ${{ matrix.go }}
 
       - name: gofmt
         run: |
@@ -56,7 +61,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: go.mod
+          go-version: stable
 
       - name: Build
         run: go build -o "$RUNNER_TEMP/yawntest" ./cmd/yawntest
@@ -70,8 +75,8 @@ jobs:
           code=${PIPESTATUS[0]}
           set -e
           test "$code" -eq 1
-          grep -q "5 untested candidates in 2 files." check.txt
-          grep -q "1 untested error path." check.txt
+          grep -q "7 untested candidates in 3 files." check.txt
+          grep -q "3 untested error paths." check.txt
 
       - name: run finds the planted bugs
         working-directory: _example
@@ -81,8 +86,9 @@ jobs:
           code=${PIPESTATUS[0]}
           set -e
           test "$code" -eq 1
-          grep -q "Wrote 2 files with 5 tests" run.txt
-          grep -q "3 findings." run.txt
+          grep -q "Wrote 3 files with 7 tests" run.txt
+          grep -q 'ParseStatus("cancelled") failed' run.txt
+          grep -q "4 findings." run.txt
 
       - name: Generated files are gofmt and vet clean
         working-directory: _example
@@ -98,3 +104,36 @@ jobs:
           grep -q "Nothing to do." second.txt
           "$RUNNER_TEMP/yawntest" gen --force ./... > /dev/null
           test "$before" = "$(cat shop/*_yawntest_test.go | sha256sum)"
+
+      - name: GitHub annotations point at the right lines
+        working-directory: _example
+        run: |
+          set +e
+          "$RUNNER_TEMP/yawntest" check --format github --static ./... > annotations.txt
+          set -e
+          grep -q '^::warning file=_example/shop/order.go,line=15,title=yawntest%3A money::' annotations.txt
+
+  action:
+    name: The GitHub Action on the example
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Run the action
+        id: yawntest
+        uses: ./
+        continue-on-error: true
+        with:
+          command: run
+          working-directory: _example
+
+      - name: It found the planted bugs
+        env:
+          EXIT_CODE: ${{ steps.yawntest.outputs.exit-code }}
+        run: test "$EXIT_CODE" = 1
