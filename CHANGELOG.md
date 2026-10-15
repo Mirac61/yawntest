@@ -39,6 +39,11 @@ CLI and its output. Each entry says what to adjust.
 
 ### Fixed
 
+- A generated test that hangs no longer holds `run` up for go's 10 minutes: the generated tests
+  get 2 minutes, and the one still running is the finding ("still running after 2m0s: this
+  input makes it hang"). Before, a timeout or a crash in a goroutine showed up as "build failed".
+- When a project's own tests crash, `check` says so and names the test, instead of "tests don't
+  build".
 - False positives found by running yawntest on 15 real projects (`docs/real-world.md`):
   - Funcs returning a func, a channel or an interface other than `error` (middleware,
     `cobra.MinimumNArgs`) are no pure-func candidates anymore: two closures never compare
@@ -88,6 +93,11 @@ CLI and its output. Each entry says what to adjust.
 
 ### Fixed
 
+- A generated test that hangs no longer holds `run` up for go's 10 minutes: the generated tests
+  get 2 minutes, and the one still running is the finding ("still running after 2m0s: this
+  input makes it hang"). Before, a timeout or a crash in a goroutine showed up as "build failed".
+- When a project's own tests crash, `check` says so and names the test, instead of "tests don't
+  build".
 - False positives found by running yawntest on 15 real projects (`docs/real-world.md`):
   - Funcs returning a func, a channel or an interface other than `error` (middleware,
     `cobra.MinimumNArgs`) are no pure-func candidates anymore: two closures never compare
