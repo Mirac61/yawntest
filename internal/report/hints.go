@@ -3,23 +3,29 @@ package report
 import (
 	"fmt"
 	"io"
-	"text/tabwriter"
 
 	"github.com/Mirac61/yawntest/internal/scan"
 )
 
-// Hints prints nothing when there are none, they are advice on top of the check.
-func Hints(w io.Writer, files []scan.File) error {
-	table := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+// Hints are advice on top of the check and never change the exit code.
+func hints(p *printer, files []scan.File) {
+	if hintCount(files) == 0 {
+		return
+	}
+	p.section("Hints")
+	p.table(func(table io.Writer) {
+		for _, file := range files {
+			for _, hint := range file.Hints {
+				fmt.Fprintf(table, "  %s\t%s\t%s\n", location(file.Path, hint.Line), paint(amber, hint.Domain), hint.Message)
+			}
+		}
+	})
+}
+
+func hintCount(files []scan.File) int {
 	count := 0
 	for _, file := range files {
-		for _, hint := range file.Hints {
-			if count == 0 {
-				fmt.Fprintln(table, "\nHints:")
-			}
-			fmt.Fprintf(table, "  %s:%d\t%s\t%s\n", file.Path, hint.Line, hint.Domain, hint.Message)
-			count++
-		}
+		count += len(file.Hints)
 	}
-	return table.Flush()
+	return count
 }

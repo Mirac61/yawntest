@@ -33,6 +33,7 @@ type jsonHint struct {
 type jsonErrorPath struct {
 	File string `json:"file"`
 	Line int    `json:"line"`
+	Func string `json:"func,omitempty"`
 	Code string `json:"code"`
 }
 
@@ -55,6 +56,7 @@ type jsonFinding struct {
 	Test       string `json:"test,omitempty"`
 	Message    string `json:"message"`
 	NeedsSetup bool   `json:"needsSetup,omitempty"`
+	Rerun      string `json:"rerun"`
 }
 
 func JSON(w io.Writer, result Result) error {
@@ -70,7 +72,7 @@ func JSON(w io.Writer, result Result) error {
 		}
 	}
 	for _, path := range result.ErrorPaths {
-		out.ErrorPaths = append(out.ErrorPaths, jsonErrorPath{File: path.File, Line: path.Line, Code: path.Code})
+		out.ErrorPaths = append(out.ErrorPaths, jsonErrorPath{File: path.File, Line: path.Line, Func: path.Func, Code: path.Code})
 	}
 	for _, file := range result.Generated {
 		out.Generated = append(out.Generated, generatedJSON(file))
@@ -78,6 +80,7 @@ func JSON(w io.Writer, result Result) error {
 	for _, finding := range result.Findings {
 		out.Findings = append(out.Findings, jsonFinding{
 			Dir: finding.Dir, Test: finding.Test, Message: finding.Message, NeedsSetup: finding.NeedsSetup,
+			Rerun: rerunCommand(finding.Dir, finding.Test),
 		})
 	}
 

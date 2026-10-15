@@ -5,6 +5,17 @@ CLI and its output. Each entry says what to adjust.
 
 ## Unreleased
 
+### Changed
+
+- **New text output.** Every location is `path:line`, the way `go vet` prints them, so a
+  terminal or editor opens it on click. A declaration matching two patterns is one row
+  (`pure-func, enum-roundtrip`). Error paths name their func. Every finding comes with the
+  `go test` command that reruns just that case, also in JSON as `rerun`. One summary line at
+  the end replaces the per-section ones and names the next command. *If you grep the text
+  output, switch to `--json`; the text is for people and will keep changing.*
+- `check` and `run` show which go test runs are going on (`running tests 3/12…`) on a
+  terminal's stderr. In CI logs nothing changes.
+
 ### Fixed
 
 - `--format github` gave wrong paths when `GITHUB_WORKSPACE` went through a symlink the

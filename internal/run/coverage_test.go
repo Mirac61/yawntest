@@ -93,6 +93,7 @@ func MustParse(s string) int {
 	want := []ErrorPath{{
 		File: filepath.Join(dir, "parse.go"),
 		Line: 11,
+		Func: "Parse",
 		Code: `return 0, fmt.Errorf("parse %q: %w", s, err)`,
 	}}
 	if !slices.Equal(paths, want) {

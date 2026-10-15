@@ -76,16 +76,19 @@ exit 1
     {
       "file": "shop/order.go",
       "line": 47,
+      "func": "ParseQuantity",
       "code": "return 0, fmt.Errorf(\"parse quantity %q: %w\", s, err)"
     },
     {
       "file": "shop/status.go",
       "line": 39,
+      "func": "ParseStatus",
       "code": "return 0, fmt.Errorf(\"unknown status %q\", s)"
     },
     {
       "file": "shop/user.go",
       "line": 15,
+      "func": "ValidateEmail",
       "code": "return errors.New(\"email needs an @\")"
     }
   ]

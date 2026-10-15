@@ -128,6 +128,9 @@ func (u User) validateName() error { return nil }`,
 			var got []string
 			for _, ret := range NewPackage([]*ast.File{file}).ErrorReturns(fset, file, []byte(src)) {
 				got = append(got, ret.Code)
+				if ret.Func == "" {
+					t.Errorf("%s: no func name", ret.Code)
+				}
 			}
 			if !slices.Equal(got, test.want) {
 				t.Errorf("got %q, want %q", got, test.want)
@@ -146,6 +149,34 @@ const imports = `import (
 )
 
 `
+
+func TestErrorReturnFuncNames(t *testing.T) {
+	src := `package p
+
+import "errors"
+
+func (u User) Validate() error { return errors.New("a") }
+
+var check = func() error { return errors.New("b") }
+
+func Walk() error {
+	return each(func() error { return errors.New("c") })
+}
+`
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "p.go", src, 0)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	var got []string
+	for _, ret := range NewPackage([]*ast.File{file}).ErrorReturns(fset, file, []byte(src)) {
+		got = append(got, ret.Func)
+	}
+	want := []string{"User.Validate", "func literal", "Walk (func literal)"}
+	if !slices.Equal(got, want) {
+		t.Errorf("funcs = %q, want %q", got, want)
+	}
+}
 
 func TestIgnores(t *testing.T) {
 	src := `package p

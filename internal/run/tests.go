@@ -23,14 +23,14 @@ type Finding struct {
 }
 
 // One go test per dir, so nested modules work; a few run at once.
-func YawntestTests(dirs []string) ([]Finding, error) {
+func YawntestTests(dirs []string, progress Progress) ([]Finding, error) {
 	findingsByDir := make([][]Finding, len(dirs))
 	errs := make([]error, len(dirs))
 	indexes := make([]int, len(dirs))
 	for i := range indexes {
 		indexes[i] = i
 	}
-	parallel(indexes, func(i int) {
+	parallel(indexes, progress, func(i int) {
 		findingsByDir[i], errs[i] = yawntestTestsIn(dirs[i])
 	})
 

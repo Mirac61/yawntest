@@ -22,15 +22,21 @@ const yawntestTests = "^(Test|Fuzz)Yawntest_"
 type ErrorPath struct {
 	File string
 	Line int
+	Func string // the func the return is in
 	Code string // the return statement, first line only
 }
 
 // Coverage runs a directory's tests with a cover profile at most once per variant and hands the
 // blocks to whoever asks. check needs them twice, for error paths and for tested funcs.
 type Coverage struct {
+	Progress Progress // optional
+
 	mu       sync.Mutex
 	profiles map[coverKey]*profile
 }
+
+// Progress is told how many of a batch of go test runs are done, for a status line.
+type Progress func(done, total int)
 
 type coverKey struct {
 	dir          string
@@ -69,13 +75,26 @@ func (c *Coverage) blocks(dir string, skipYawntest bool) ([]coverBlock, error) {
 
 // prefetch fills the profiles of dirs in parallel; go test of one package rarely uses every core.
 func (c *Coverage) prefetch(dirs []string, skipYawntest bool) {
-	parallel(dirs, func(dir string) { c.blocks(dir, skipYawntest) })
+	var todo []string
+	c.mu.Lock()
+	for _, dir := range dirs {
+		if c.profiles[coverKey{dir: filepath.Clean(dir), skipYawntest: skipYawntest}] == nil {
+			todo = append(todo, dir)
+		}
+	}
+	c.mu.Unlock()
+	parallel(todo, c.Progress, func(dir string) { c.blocks(dir, skipYawntest) })
 }
 
-// parallel calls do once per item, a few at a time.
-func parallel[T any](items []T, do func(T)) {
+// parallel calls do once per item, a few at a time, and reports each finished one to progress.
+func parallel[T any](items []T, progress Progress, do func(T)) {
 	limit := make(chan struct{}, min(max(runtime.NumCPU()/2, 2), 8))
 	var wg sync.WaitGroup
+	var mu sync.Mutex
+	done := 0
+	if progress != nil && len(items) > 0 {
+		progress(0, len(items))
+	}
 	for _, item := range items {
 		wg.Add(1)
 		limit <- struct{}{}
@@ -83,6 +102,12 @@ func parallel[T any](items []T, do func(T)) {
 			defer wg.Done()
 			defer func() { <-limit }()
 			do(item)
+			if progress != nil {
+				mu.Lock()
+				done++
+				progress(done, len(items))
+				mu.Unlock()
+			}
 		}()
 	}
 	wg.Wait()
@@ -129,7 +154,7 @@ func UntestedErrorPaths(files []scan.File, hasTests func(dir string) bool, cover
 		for _, ret := range file.ErrorReturns {
 			position := token.Position{Line: ret.Line, Column: ret.Column}
 			if neverRan(position, filepath.Base(file.Path), blocks) {
-				result.Paths = append(result.Paths, ErrorPath{File: file.Path, Line: ret.Line, Code: ret.Code})
+				result.Paths = append(result.Paths, ErrorPath{File: file.Path, Line: ret.Line, Func: ret.Func, Code: ret.Code})
 			}
 		}
 	}

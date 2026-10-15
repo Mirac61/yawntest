@@ -95,7 +95,8 @@ func TestJSON(t *testing.T) {
     {
       "dir": ".",
       "test": "FuzzYawntest_Add/seed#3",
-      "message": "panic: overflow"
+      "message": "panic: overflow",
+      "rerun": "go test . -run '^FuzzYawntest_Add$/^seed#3$'"
     }
   ]
 }
