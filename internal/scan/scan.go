@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -39,8 +40,23 @@ type Tree struct {
 
 type identSet map[string]bool
 
-// Scan parses root; exclude, if set, leaves out files and whole dirs it returns true for.
-func Scan(root string, exclude func(path string) bool) (Tree, error) {
+// Options tune a scan; the zero value scans everything, from the syntax alone.
+type Options struct {
+	Exclude func(path string) bool // leaves out files and whole dirs it returns true for
+	Types   TypeChecker            // nil: no type information
+}
+
+// TypeChecker gives a directory's parsed package files their import path and types, and finds
+// the dir of a package of the module by import path.
+type TypeChecker interface {
+	Check(dir string, fset *token.FileSet, files []*ast.File) (path string, info *types.Info, ok bool)
+	Dir(path string) (string, bool)
+}
+
+// Scan parses root in two passes: every dir first, so that detection in one package can follow
+// calls into another, then detection.
+func Scan(root string, options Options) (Tree, error) {
+	exclude := options.Exclude
 	var paths []string
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -72,10 +88,27 @@ func Scan(root string, exclude func(path string) bool) (Tree, error) {
 	for i, path := range paths {
 		order[path] = i
 	}
+	fset := token.NewFileSet() // one for the tree: the type checker shares imports across dirs
+	var program *detect.Program
+	program = detect.NewProgram(func(path string) *detect.Package {
+		return loadPackage(fset, options.Types, path, program)
+	})
+	var dirs []*parsedDir
 	for _, dirPaths := range byDir(paths) {
-		if err := tree.addDir(dirPaths); err != nil {
+		dir, err := tree.parseDir(fset, dirPaths)
+		if err != nil {
 			return Tree{}, err
 		}
+		dir.pkg = detect.NewPackage(dir.packageFiles)
+		if options.Types != nil && len(dir.packageFiles) > 0 {
+			if path, info, ok := options.Types.Check(filepath.Dir(dirPaths[0]), fset, dir.packageFiles); ok {
+				dir.pkg.SetTypes(path, info, program)
+			}
+		}
+		dirs = append(dirs, dir)
+	}
+	for _, dir := range dirs {
+		tree.detect(fset, dir)
 	}
 	slices.SortFunc(tree.Files, func(a, b File) int { return order[a.Path] - order[b.Path] })
 	return tree, nil
@@ -104,15 +137,49 @@ type parsedFile struct {
 	ast  *ast.File
 }
 
-// addDir parses one directory as a package, so detection sees helpers and consts across files.
-func (t *Tree) addDir(paths []string) error {
-	fset := token.NewFileSet()
-	var sources []parsedFile
-	var packageFiles []*ast.File
+// loadPackage parses and type-checks a package of the module outside the scanned tree, so a
+// call into it can be judged. Only for the analysis: it adds no files to the tree.
+func loadPackage(fset *token.FileSet, types TypeChecker, path string, program *detect.Program) *detect.Package {
+	if types == nil {
+		return nil
+	}
+	dir, ok := types.Dir(path)
+	if !ok {
+		return nil
+	}
+	paths, err := filepath.Glob(filepath.Join(dir, "*.go"))
+	if err != nil {
+		return nil
+	}
+	var files []*ast.File
+	for _, path := range paths {
+		if strings.HasSuffix(path, "_test.go") {
+			continue
+		}
+		if file, err := parser.ParseFile(fset, path, nil, 0); err == nil {
+			files = append(files, file)
+		}
+	}
+	pkg := detect.NewPackage(files)
+	if importPath, info, ok := types.Check(dir, fset, files); ok {
+		pkg.SetTypes(importPath, info, program)
+	}
+	return pkg
+}
+
+type parsedDir struct {
+	sources      []parsedFile // what detection runs on
+	packageFiles []*ast.File  // sources plus generated files, for the package index
+	pkg          *detect.Package
+}
+
+// parseDir parses one directory as a package, so detection sees helpers and consts across files.
+func (t *Tree) parseDir(fset *token.FileSet, paths []string) (*parsedDir, error) {
+	dir := &parsedDir{}
 	for _, path := range paths {
 		src, err := os.ReadFile(path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		file, err := parser.ParseFile(fset, path, src, parser.ParseComments)
 		if err != nil {
@@ -120,22 +187,24 @@ func (t *Tree) addDir(paths []string) error {
 			continue
 		}
 
-		dir := filepath.Dir(path)
 		switch {
 		case IsYawntestFile(path):
-			collectIdents(file, t.idents(t.yawntestIdents, dir))
+			collectIdents(file, t.idents(t.yawntestIdents, filepath.Dir(path)))
 		case strings.HasSuffix(path, "_test.go"):
-			collectIdents(file, t.idents(t.testIdents, dir))
+			collectIdents(file, t.idents(t.testIdents, filepath.Dir(path)))
 		default:
-			packageFiles = append(packageFiles, file)
+			dir.packageFiles = append(dir.packageFiles, file)
 			if !ast.IsGenerated(file) {
-				sources = append(sources, parsedFile{path: path, src: src, ast: file})
+				dir.sources = append(dir.sources, parsedFile{path: path, src: src, ast: file})
 			}
 		}
 	}
+	return dir, nil
+}
 
-	pkg := detect.NewPackage(packageFiles)
-	for _, source := range sources {
+func (t *Tree) detect(fset *token.FileSet, dir *parsedDir) {
+	pkg := dir.pkg
+	for _, source := range dir.sources {
 		ignored := detect.Ignores(fset, source.ast)
 		t.Files = append(t.Files, File{
 			Path:            source.path,
@@ -146,7 +215,6 @@ func (t *Tree) addDir(paths []string) error {
 			ErrorReturns:    unignored(pkg.ErrorReturns(fset, source.ast, source.src), ignored, func(r detect.ErrorReturn) int { return r.Line }),
 		})
 	}
-	return nil
 }
 
 func (t *Tree) idents(byDir map[string]identSet, dir string) identSet {

@@ -47,7 +47,7 @@ func File(pkg, buildConstraint string, matches []detect.Match) (Output, error) {
 
 	code, err := b.render(pkg, buildConstraint)
 	if err != nil {
-		return Output{}, err
+		return Output{}, err //yawntest:ignore only a broken template fails here; the golden tests run them all
 	}
 	out.Code = code
 	return out, nil
