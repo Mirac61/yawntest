@@ -1,0 +1,14 @@
+exit 0
+--- stdout
+Generated
+  ✓ shop/order.go:11   Order          json-roundtrip  1 test
+  ✓ shop/order.go:20   CreateOrder    http-handler    3 cases
+  ✓ shop/order.go:30   Split          pure-func       fuzz, 9 seeds, parts sum to total
+  ✓ shop/order.go:42   Initial        pure-func       fuzz, 8 seeds
+  ✓ shop/order.go:44   ParseQuantity  pure-func       fuzz, 8 seeds
+  ✓ shop/status.go:30  ParseStatus    pure-func       fuzz, 8 seeds
+  ✓ shop/status.go:30  ParseStatus    enum-roundtrip  4 consts
+  ✓ shop/user.go:13    ValidateEmail  validation      9 cases (8 expected values TODO)
+
+Wrote 3 files with 8 tests  → yawntest run runs them
+--- stderr

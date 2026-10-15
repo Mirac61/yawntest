@@ -89,9 +89,11 @@ func commandFlags(opts *options) (*flag.FlagSet, bool) {
 		flags.BoolVar(&opts.static, "static", false, "don't run tests: no error paths, and only names count as tested")
 	case "gen":
 		flags.BoolVar(&opts.force, "force", false, "overwrite existing yawntest files")
+		flags.BoolVar(&opts.all, "all", false, "also generate tests for code that already has tests")
 		flags.BoolVar(&opts.static, "static", false, "don't run tests: only names count as tested")
 	case "run":
 		flags.BoolVar(&opts.force, "force", false, "overwrite existing yawntest files")
+		flags.BoolVar(&opts.all, "all", false, "also generate tests for code that already has tests")
 		flags.DurationVar(&opts.fuzztime, "fuzztime", 0, "after the seeds, fuzz each generated fuzz test for this `duration`, e.g. 10s")
 	default:
 		return nil, false
