@@ -1,8 +1,10 @@
 package run
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/Mirac61/yawntest/internal/scan"
@@ -22,6 +24,29 @@ func TestParseProfile(t *testing.T) {
 	if !slices.Equal(blocks, want) {
 		t.Errorf("blocks = %+v, want %+v", blocks, want)
 	}
+}
+
+func TestParseProfileBadLines(t *testing.T) {
+	for _, line := range []string{"no colon here", "example.com/x.go:9.2,10 2 1"} {
+		if _, err := parseProfile([]byte("mode: set\n" + line + "\n")); err == nil {
+			t.Errorf("parseProfile(%q) = nil error, want one", line)
+		}
+	}
+	if _, err := coverProfileOf(t, "no colon here"); err == nil || !strings.Contains(err.Error(), "bad coverage line") {
+		t.Errorf("err = %v, want the bad line reported from a written profile", err)
+	}
+}
+
+// coverProfileOf runs coverProfile against a fake go that writes profile into -coverprofile.
+func coverProfileOf(t *testing.T, profile string) ([]coverBlock, error) {
+	t.Helper()
+	bin := t.TempDir()
+	script := "#!/bin/sh\nfor arg; do case $arg in -coverprofile=*) printf 'mode: set\\n%s\\n' '" + profile + "' > \"${arg#-coverprofile=}\";; esac; done\n"
+	if err := os.WriteFile(filepath.Join(bin, "go"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	return coverProfile(t.TempDir())
 }
 
 func TestUntestedErrorPaths(t *testing.T) {
