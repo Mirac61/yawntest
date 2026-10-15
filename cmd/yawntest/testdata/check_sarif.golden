@@ -1,0 +1,372 @@
+exit 1
+--- stdout
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "yawntest",
+          "version": "e2e",
+          "informationUri": "https://github.com/Mirac61/yawntest",
+          "rules": [
+            {
+              "id": "error-path",
+              "shortDescription": {
+                "text": "An error return no test reaches"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "hint/auth",
+              "shortDescription": {
+                "text": "Code that is likely wrong in a way tests rarely catch"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "hint/dates",
+              "shortDescription": {
+                "text": "Code that is likely wrong in a way tests rarely catch"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "hint/money",
+              "shortDescription": {
+                "text": "Code that is likely wrong in a way tests rarely catch"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "untested/enum-roundtrip",
+              "shortDescription": {
+                "text": "Code yawntest can write a test for, and no test covers"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "untested/http-handler",
+              "shortDescription": {
+                "text": "Code yawntest can write a test for, and no test covers"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "untested/json-roundtrip",
+              "shortDescription": {
+                "text": "Code yawntest can write a test for, and no test covers"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "untested/pure-func",
+              "shortDescription": {
+                "text": "Code yawntest can write a test for, and no test covers"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "untested/validation",
+              "shortDescription": {
+                "text": "Code yawntest can write a test for, and no test covers"
+              },
+              "helpUri": "https://github.com/Mirac61/yawntest#readme",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "untested/json-roundtrip",
+          "level": "note",
+          "message": {
+            "text": "Order has no test yet (has json tags). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 11
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "untested/http-handler",
+          "level": "note",
+          "message": {
+            "text": "CreateOrder has no test yet (handler signature, decodes JSON body). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "untested/pure-func",
+          "level": "note",
+          "message": {
+            "text": "Split has no test yet (basic params, no I/O). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 30
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "untested/pure-func",
+          "level": "note",
+          "message": {
+            "text": "Initial has no test yet (basic params, no I/O). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 42
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "hint/money",
+          "level": "warning",
+          "message": {
+            "text": "Price is a float64; floats can't hold cents exactly, use integer cents or a decimal type"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "hint/dates",
+          "level": "warning",
+          "message": {
+            "text": "time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 52
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "untested/pure-func",
+          "level": "note",
+          "message": {
+            "text": "ParseStatus has no test yet (basic params, no I/O). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/status.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 30
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "untested/enum-roundtrip",
+          "level": "note",
+          "message": {
+            "text": "ParseStatus has no test yet (Status has String and consts). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/status.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 30
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "untested/validation",
+          "level": "note",
+          "message": {
+            "text": "ValidateEmail has no test yet (name Validate*, returns error). `yawntest gen` writes one."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/user.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "hint/auth",
+          "level": "warning",
+          "message": {
+            "text": "Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/user.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "error-path",
+          "level": "warning",
+          "message": {
+            "text": "No test reaches this return in ParseQuantity: return 0, fmt.Errorf(\"parse quantity %q: %w\", s, err)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/order.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 47
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "error-path",
+          "level": "warning",
+          "message": {
+            "text": "No test reaches this return in ParseStatus: return 0, fmt.Errorf(\"unknown status %q\", s)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/status.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 39
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "error-path",
+          "level": "warning",
+          "message": {
+            "text": "No test reaches this return in ValidateEmail: return errors.New(\"email needs an @\")"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "example/shop/user.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 15
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+--- stderr

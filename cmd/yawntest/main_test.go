@@ -19,6 +19,7 @@ var update = flag.Bool("update", false, "rewrite testdata/*.golden from the curr
 var binary string
 
 // TestMain builds the real binary: these tests run it like a user would, exit codes included.
+// The version is fixed, or every commit would change the SARIF golden.
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if testing.Short() {
@@ -31,7 +32,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	binary = filepath.Join(dir, "yawntest")
-	if output, err := exec.Command("go", "build", "-o", binary, ".").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-ldflags", "-X main.stampedVersion=e2e", "-o", binary, ".").CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "build yawntest: %v\n%s", err, output)
 		os.Exit(1)
 	}
@@ -50,6 +51,7 @@ func TestEndToEnd(t *testing.T) {
 		{name: "check_json", args: []string{"check", "--json", "./..."}},
 		{name: "check_github", args: []string{"check", "--format", "github", "./..."}, env: []string{"GITHUB_WORKSPACE=$WORK"}},
 		{name: "check_static", args: []string{"check", "--static", "./..."}},
+		{name: "check_sarif", args: []string{"check", "--format", "sarif", "./..."}, env: []string{"GITHUB_WORKSPACE=$WORK"}},
 		{name: "gen", args: []string{"gen", "./..."}},
 		{name: "run", args: []string{"run", "./..."}},
 		{name: "usage_error", args: []string{"check", "a", "b"}},
@@ -64,6 +66,19 @@ func TestEndToEnd(t *testing.T) {
 			}
 			checkGolden(t, test.name, work, yawntest(t, example, env, test.args...))
 		})
+	}
+}
+
+// --sarif writes a SARIF file next to the normal output.
+func TestSARIFFile(t *testing.T) {
+	_, example := copyExample(t)
+	sarif := filepath.Join(t.TempDir(), "out.sarif")
+	if got := yawntest(t, example, nil, "check", "--static", "--sarif", sarif, "./..."); !strings.Contains(got, "Untested") {
+		t.Errorf("text output missing:\n%s", got)
+	}
+	data, err := os.ReadFile(sarif)
+	if err != nil || !strings.Contains(string(data), `"ruleId": "untested/enum-roundtrip"`) {
+		t.Errorf("SARIF file: %v\n%s", err, data)
 	}
 }
 
