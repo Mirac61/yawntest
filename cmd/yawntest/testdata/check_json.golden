@@ -1,0 +1,93 @@
+exit 1
+--- stdout
+{
+  "candidates": [
+    {
+      "file": "shop/order.go",
+      "line": 11,
+      "name": "Order",
+      "pattern": "json-roundtrip",
+      "reason": "has json tags"
+    },
+    {
+      "file": "shop/order.go",
+      "line": 20,
+      "name": "CreateOrder",
+      "pattern": "http-handler",
+      "reason": "handler signature, decodes JSON body"
+    },
+    {
+      "file": "shop/order.go",
+      "line": 30,
+      "name": "Split",
+      "pattern": "pure-func",
+      "reason": "basic params, no I/O"
+    },
+    {
+      "file": "shop/order.go",
+      "line": 42,
+      "name": "Initial",
+      "pattern": "pure-func",
+      "reason": "basic params, no I/O"
+    },
+    {
+      "file": "shop/status.go",
+      "line": 30,
+      "name": "ParseStatus",
+      "pattern": "pure-func",
+      "reason": "basic params, no I/O"
+    },
+    {
+      "file": "shop/status.go",
+      "line": 30,
+      "name": "ParseStatus",
+      "pattern": "enum-roundtrip",
+      "reason": "Status has String and consts"
+    },
+    {
+      "file": "shop/user.go",
+      "line": 13,
+      "name": "ValidateEmail",
+      "pattern": "validation",
+      "reason": "name Validate*, returns error"
+    }
+  ],
+  "hints": [
+    {
+      "file": "shop/order.go",
+      "line": 15,
+      "domain": "money",
+      "message": "Price is a float64; floats can't hold cents exactly, use integer cents or a decimal type"
+    },
+    {
+      "file": "shop/order.go",
+      "line": 52,
+      "domain": "dates",
+      "message": "time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first"
+    },
+    {
+      "file": "shop/user.go",
+      "line": 20,
+      "domain": "auth",
+      "message": "Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it"
+    }
+  ],
+  "errorPaths": [
+    {
+      "file": "shop/order.go",
+      "line": 47,
+      "code": "return 0, fmt.Errorf(\"parse quantity %q: %w\", s, err)"
+    },
+    {
+      "file": "shop/status.go",
+      "line": 39,
+      "code": "return 0, fmt.Errorf(\"unknown status %q\", s)"
+    },
+    {
+      "file": "shop/user.go",
+      "line": 15,
+      "code": "return errors.New(\"email needs an @\")"
+    }
+  ]
+}
+--- stderr

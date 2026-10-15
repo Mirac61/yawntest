@@ -1,6 +1,7 @@
 package report
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -42,5 +43,26 @@ func TestGitHub(t *testing.T) {
 		"::warning title=yawntest::skipped bad.go, it doesn't parse: 100%25 broken\n"
 	if got := out.String(); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+// The workspace path may go through a symlink the cwd doesn't, like /var and /private/var on macOS.
+func TestGitHubWorkspaceThroughSymlink(t *testing.T) {
+	real := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(real, "shop"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(real, "shop", "order.go"), []byte("package shop\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(t.TempDir(), "workspace")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("symlinks unsupported: %v", err)
+	}
+	t.Setenv("GITHUB_WORKSPACE", link)
+
+	a := annotator{workspace: link}
+	if got := a.relative(filepath.Join(real, "shop", "order.go")); got != "shop/order.go" {
+		t.Errorf("relative = %q, want shop/order.go", got)
 	}
 }

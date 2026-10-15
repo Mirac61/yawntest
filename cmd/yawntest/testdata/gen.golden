@@ -1,0 +1,15 @@
+exit 0
+--- stdout
+shop/order.go
+  ✓ Order        json-roundtrip  1 test
+  ✓ CreateOrder  http-handler    3 cases
+  ✓ Split        pure-func       fuzz, 9 seeds, parts sum to total
+  ✓ Initial      pure-func       fuzz, 8 seeds
+shop/status.go
+  ✓ ParseStatus  pure-func       fuzz, 8 seeds
+  ✓ ParseStatus  enum-roundtrip  4 consts
+shop/user.go
+  ✓ ValidateEmail  validation  9 cases (8 expected values TODO)
+
+Wrote 3 files with 7 tests.
+--- stderr

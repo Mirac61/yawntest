@@ -1,0 +1,27 @@
+exit 1
+--- stdout
+shop/order.go
+  Order        json-roundtrip  line 11  has json tags
+  CreateOrder  http-handler    line 20  handler signature, decodes JSON body
+  Split        pure-func       line 30  basic params, no I/O
+  Initial      pure-func       line 42  basic params, no I/O
+shop/status.go
+  ParseStatus  pure-func       line 30  basic params, no I/O
+  ParseStatus  enum-roundtrip  line 30  Status has String and consts
+shop/user.go
+  ValidateEmail  validation  line 13  name Validate*, returns error
+
+7 untested candidates in 3 files.
+
+Hints:
+  shop/order.go:15  money  Price is a float64; floats can't hold cents exactly, use integer cents or a decimal type
+  shop/order.go:52  dates  time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first
+  shop/user.go:20   auth   Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it
+
+Error returns no test reaches:
+  shop/order.go:47   return 0, fmt.Errorf("parse quantity %q: %w", s, err)
+  shop/status.go:39  return 0, fmt.Errorf("unknown status %q", s)
+  shop/user.go:15    return errors.New("email needs an @")
+
+3 untested error paths.
+--- stderr
