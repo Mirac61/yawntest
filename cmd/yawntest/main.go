@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime/debug"
 	"slices"
+	"strings"
+	"time"
 
 	"github.com/Mirac61/yawntest/internal/changes"
 	"github.com/Mirac61/yawntest/internal/config"
@@ -27,12 +29,13 @@ type options struct {
 	root      string
 	force     bool
 	changed   bool
-	since     string // git ref; like changed, but since the merge base with it
-	static    bool   // run no tests
-	format    string // text, json, github or sarif
-	sarifFile string // --sarif: also write SARIF here
-	config    string // --config: the .yawntest.json to use instead of searching for one
-	json      bool   // --json, folded into format by parseArgs
+	since     string        // git ref; like changed, but since the merge base with it
+	static    bool          // run no tests
+	format    string        // text, json, github or sarif
+	sarifFile string        // --sarif: also write SARIF here
+	config    string        // --config: the .yawntest.json to use instead of searching for one
+	fuzztime  time.Duration // run --fuzztime: how long to fuzz each generated fuzz test
+	json      bool          // --json, folded into format by parseArgs
 }
 
 // filtered reports whether only changed code counts.
@@ -123,8 +126,44 @@ func collect(opts options) report.Result {
 	if opts.command == "run" {
 		dirs := slices.DeleteFunc(must(scan.Dirs(opts.root, scan.IsYawntestFile)), cfg.Excluded)
 		result.Findings = must(run.YawntestTests(dirs, statusLine("running the generated tests")))
+		if opts.fuzztime > 0 {
+			result.Findings = append(result.Findings, fuzz(dirs, result.Findings, opts.fuzztime)...)
+		}
 	}
 	return result
+}
+
+// fuzz runs Go's fuzzing engine on every generated fuzz test whose seeds all passed; a failing
+// seed already is a finding, and fuzzing would only find it again.
+func fuzz(dirs []string, seedFindings []run.Finding, duration time.Duration) []run.Finding {
+	var targets []run.FuzzTarget
+	for _, target := range must(run.FuzzTargets(dirs)) {
+		failed := slices.ContainsFunc(seedFindings, func(finding run.Finding) bool {
+			return finding.Dir == target.Dir && (finding.Test == "" || strings.HasPrefix(finding.Test, target.Name+"/") || finding.Test == target.Name)
+		})
+		if !failed {
+			targets = append(targets, target)
+		}
+	}
+	if len(targets) == 0 {
+		return nil
+	}
+
+	fmt.Fprintln(os.Stderr, "yawntest:", run.FuzzEstimate(len(targets), duration))
+	progress := statusLine("fuzzing")
+	var findings []run.Finding
+	for i, target := range targets {
+		if progress != nil {
+			progress(i, len(targets))
+		}
+		if finding, failed := must2(run.Fuzz(target, duration)); failed {
+			findings = append(findings, finding)
+		}
+	}
+	if progress != nil {
+		progress(len(targets), len(targets))
+	}
+	return findings
 }
 
 func printText(opts options, result report.Result) {
@@ -247,6 +286,13 @@ func must[T any](value T, err error) T {
 		fail(err)
 	}
 	return value
+}
+
+func must2[T, U any](a T, b U, err error) (T, U) {
+	if err != nil {
+		fail(err)
+	}
+	return a, b
 }
 
 func mustReport(err error) {
