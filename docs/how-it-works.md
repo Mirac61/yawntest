@@ -255,6 +255,7 @@ copies the text report into the job summary.
 | `--changed`, `--since` | Temp git repos: a commit, an edit and an untracked file; a feature branch against `main` |
 | Scanning | A temp package with a broken file, a helper doing I/O in another file, an ignored func and a test that only calls `strings.Split` |
 | Reports | Table tests with the exact expected text, JSON and workflow commands |
+| The CLI | `cmd/yawntest/main_test.go` builds the binary, runs every command on a copy of `_example` and compares exit code, stdout and stderr with `testdata/*.golden` (`-update` rewrites them) |
 | The action | CI runs `uses: ./` on the example and checks the exit code |
 
 `go test ./...` covers all of it. `go test -short` skips the parts that start the go tool or git.
