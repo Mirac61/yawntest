@@ -100,6 +100,7 @@ func commandFlags(opts *options) (*flag.FlagSet, bool) {
 	flags.StringVar(&opts.format, "format", "text", "output `format`: text, json, github for annotations in GitHub Actions, or sarif for code scanning")
 	flags.StringVar(&opts.sarifFile, "sarif", "", "also write the result as SARIF to `file`, whatever --format is")
 	flags.BoolVar(&opts.json, "json", false, "short for --format json")
+	flags.StringVar(&opts.config, "config", "", "use this `file` instead of the .yawntest.json found in the path or above it")
 
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "usage: yawntest %s [flags] [path]\n", opts.command)
