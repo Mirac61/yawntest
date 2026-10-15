@@ -1,0 +1,35 @@
+12-12 FormatCents pure-func: basic params, no I/O
+    params: (cents int64), results: (string)
+12-12 FormatCents roundtrip: pairs with ParseCents, no I/O
+    partner: ParseCents
+    params: (cents int64), results: (string)
+14-14 ParseCents pure-func: basic params, no I/O
+    params: (s string), results: (int64, error?)
+16-16 EncodeID pure-func: basic params, no I/O
+    params: (id []byte), results: (string)
+16-16 EncodeID roundtrip: pairs with DecodeID, no I/O
+    partner: DecodeID
+    params: (id []byte), results: (string)
+18-18 DecodeID pure-func: basic params, no I/O
+    params: (s string), results: ([]byte, error?)
+21-21 FormatRatio pure-func: basic params, no I/O
+    params: (r float64), results: (string)
+23-23 ParseRatio pure-func: basic params, no I/O
+    params: (s string), results: (float64, error?)
+26-26 EncodeConfig pure-func: basic params, no I/O
+    params: (name string), results: (string)
+34-34 FormatCount pure-func: basic params, no I/O
+    params: (n int), results: (string)
+36-36 ParseCount pure-func: basic params, no I/O
+    params: (s string), results: (int64, error?)
+53-60 ParseColor pure-func: basic params, no I/O
+    params: (s string), results: (Color?, error?)
+53-60 ParseColor enum-roundtrip: Color has String and consts
+    partner: Color
+    consts: Red, Green, Blue
+    params: (s string), results: (Color?, error?)
+69-69 ParseSize pure-func: basic params, no I/O
+    params: (s string), results: (Size?, error?)
+72-72 NormalizeTag pure-func: basic params, no I/O
+    invariant: idempotent
+    params: (tag string), results: (string)

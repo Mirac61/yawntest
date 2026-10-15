@@ -2,19 +2,22 @@ package run
 
 import (
 	"fmt"
-	"go/ast"
-	"go/parser"
 	"go/token"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/Mirac61/yawntest/internal/detect"
 	"github.com/Mirac61/yawntest/internal/scan"
 )
+
+// yawntestTests matches the test funcs gen writes, and only those.
+const yawntestTests = "^(Test|Fuzz)Yawntest_"
 
 type ErrorPath struct {
 	File string
@@ -22,21 +25,115 @@ type ErrorPath struct {
 	Code string // the return statement, first line only
 }
 
-// UntestedErrorPaths runs each dir's tests with coverage and returns the error returns that never ran.
-func UntestedErrorPaths(dirs []string) ([]ErrorPath, error) {
-	var paths []ErrorPath
-	for _, dir := range dirs {
-		blocks, err := coverProfile(dir)
-		if err != nil {
-			return nil, err
-		}
-		dirPaths, err := uncoveredErrorReturns(dir, blocks)
-		if err != nil {
-			return nil, err
-		}
-		paths = append(paths, dirPaths...)
+// Coverage runs a directory's tests with a cover profile at most once per variant and hands the
+// blocks to whoever asks. check needs them twice, for error paths and for tested funcs.
+type Coverage struct {
+	mu       sync.Mutex
+	profiles map[coverKey]*profile
+}
+
+type coverKey struct {
+	dir          string
+	skipYawntest bool
+}
+
+type profile struct {
+	once   sync.Once
+	blocks []coverBlock
+	err    error
+}
+
+func NewCoverage() *Coverage {
+	return &Coverage{profiles: map[coverKey]*profile{}}
+}
+
+func (c *Coverage) blocks(dir string, skipYawntest bool) ([]coverBlock, error) {
+	key := coverKey{dir: filepath.Clean(dir), skipYawntest: skipYawntest}
+	c.mu.Lock()
+	p := c.profiles[key]
+	if p == nil {
+		p = &profile{}
+		c.profiles[key] = p
 	}
-	return paths, nil
+	c.mu.Unlock()
+
+	p.once.Do(func() {
+		var args []string
+		if skipYawntest {
+			args = []string{"-skip", yawntestTests}
+		}
+		p.blocks, p.err = coverProfile(dir, args...)
+	})
+	return p.blocks, p.err
+}
+
+// prefetch fills the profiles of dirs in parallel; go test of one package rarely uses every core.
+func (c *Coverage) prefetch(dirs []string, skipYawntest bool) {
+	parallel(dirs, func(dir string) { c.blocks(dir, skipYawntest) })
+}
+
+// parallel calls do once per item, a few at a time.
+func parallel[T any](items []T, do func(T)) {
+	limit := make(chan struct{}, min(max(runtime.NumCPU()/2, 2), 8))
+	var wg sync.WaitGroup
+	for _, item := range items {
+		wg.Add(1)
+		limit <- struct{}{}
+		go func() {
+			defer wg.Done()
+			defer func() { <-limit }()
+			do(item)
+		}()
+	}
+	wg.Wait()
+}
+
+// ErrorPaths is the error-path part of check.
+type ErrorPaths struct {
+	Paths    []ErrorPath
+	NoTests  []string // dirs with error returns but no tests at all; listing each return would be noise
+	Warnings []string // dirs whose tests don't build, so their error paths are unknown
+}
+
+// UntestedErrorPaths runs each dir's tests with coverage and returns the error returns that never ran.
+func UntestedErrorPaths(files []scan.File, hasTests func(dir string) bool, coverage *Coverage) ErrorPaths {
+	var result ErrorPaths
+	var dirs []string
+	seen := map[string]bool{}
+	for _, file := range files {
+		dir := filepath.Dir(file.Path)
+		if len(file.ErrorReturns) == 0 || seen[dir] {
+			continue
+		}
+		seen[dir] = true
+		if hasTests(dir) {
+			dirs = append(dirs, dir)
+		} else {
+			result.NoTests = append(result.NoTests, dir)
+		}
+	}
+	coverage.prefetch(dirs, false)
+
+	failed := map[string]bool{}
+	for _, file := range files {
+		dir := filepath.Dir(file.Path)
+		if len(file.ErrorReturns) == 0 || !hasTests(dir) || failed[dir] {
+			continue
+		}
+		blocks, err := coverage.blocks(dir, false)
+		if err != nil {
+			failed[dir] = true
+			result.Warnings = append(result.Warnings, fmt.Sprintf("%s: error paths skipped, %v", dir, err))
+			continue
+		}
+		for _, ret := range file.ErrorReturns {
+			position := token.Position{Line: ret.Line, Column: ret.Column}
+			if neverRan(position, filepath.Base(file.Path), blocks) {
+				result.Paths = append(result.Paths, ErrorPath{File: file.Path, Line: ret.Line, Code: ret.Code})
+			}
+		}
+	}
+	return result
 }
 
 type coverBlock struct {
@@ -69,16 +166,28 @@ func coverProfile(dir string, testArgs ...string) ([]coverBlock, error) {
 
 	data, err := os.ReadFile(profile.Name())
 	if err != nil || len(data) == 0 {
-		return nil, fmt.Errorf("coverage for %s: %v\n%s", dir, runErr, output)
+		//yawntest:ignore needs a go tool that writes no profile at all
+		return nil, fmt.Errorf("tests don't run: %s", goOutputLine(string(output), runErr))
 	}
 	blocks, err := parseProfile(data)
 	if err != nil {
 		return nil, err
 	}
 	if runErr != nil && len(blocks) == 0 {
-		return nil, fmt.Errorf("coverage for %s: %v\n%s", dir, runErr, output)
+		return nil, fmt.Errorf("tests don't build: %s", goOutputLine(string(output), runErr))
 	}
 	return blocks, nil
+}
+
+// goOutputLine is the first line of go's output that says something, or the error itself.
+func goOutputLine(output string, err error) string {
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "FAIL") {
+			return line
+		}
+	}
+	return fmt.Sprint(err)
 }
 
 // Lines look like: example.com/pkg/file.go:9.2,10.16 2 1
@@ -106,84 +215,6 @@ func parseProfile(data []byte) ([]coverBlock, error) {
 	return blocks, nil
 }
 
-func uncoveredErrorReturns(dir string, blocks []coverBlock) ([]ErrorPath, error) {
-	sourceFiles, err := filepath.Glob(filepath.Join(dir, "*.go"))
-	if err != nil {
-		return nil, err
-	}
-
-	var paths []ErrorPath
-	for _, sourcePath := range sourceFiles {
-		if strings.HasSuffix(sourcePath, "_test.go") {
-			continue
-		}
-		filePaths, err := uncoveredInFile(sourcePath, blocks)
-		if err != nil {
-			return nil, err
-		}
-		paths = append(paths, filePaths...)
-	}
-	return paths, nil
-}
-
-func uncoveredInFile(sourcePath string, blocks []coverBlock) ([]ErrorPath, error) {
-	source, err := os.ReadFile(sourcePath)
-	if err != nil {
-		return nil, err
-	}
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, sourcePath, source, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var paths []ErrorPath
-	ast.Inspect(file, func(node ast.Node) bool {
-		ret, ok := node.(*ast.ReturnStmt)
-		if !ok || !returnsErr(ret) {
-			return true
-		}
-
-		start, end := fset.Position(ret.Pos()), fset.Position(ret.End())
-		if neverRan(start, filepath.Base(sourcePath), blocks) {
-			paths = append(paths, ErrorPath{
-				File: sourcePath,
-				Line: start.Line,
-				Code: firstLine(string(source[start.Offset:end.Offset])),
-			})
-		}
-		return true
-	})
-	return paths, nil
-}
-
-// returnsErr matches `return err`, `return x, err` and wrapped forms like fmt.Errorf("...: %w", err).
-func returnsErr(ret *ast.ReturnStmt) bool {
-	if len(ret.Results) == 0 {
-		return false
-	}
-
-	last := ret.Results[len(ret.Results)-1]
-	if isErrIdent(last) {
-		return true
-	}
-	call, ok := last.(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	for _, arg := range call.Args {
-		if isErrIdent(arg) {
-			return true
-		}
-	}
-	return false
-}
-
-func isErrIdent(expr ast.Expr) bool {
-	ident, ok := expr.(*ast.Ident)
-	return ok && ident.Name == "err"
-}
-
 // Statements outside every block weren't instrumented and don't count.
 func neverRan(position token.Position, fileName string, blocks []coverBlock) bool {
 	instrumented := false
@@ -199,20 +230,30 @@ func neverRan(position token.Position, fileName string, blocks []coverBlock) boo
 	return instrumented
 }
 
-// WithoutCovered drops func matches whose body already runs in the package's own tests. The
-// name check in scan misses funcs that tests only reach indirectly, e.g. through a router.
-func WithoutCovered(files []scan.File) ([]scan.File, error) {
-	blocksByDir := map[string][]coverBlock{}
+// WithoutCovered drops func matches whose body already runs in the package's tests. The name
+// check in scan misses funcs that tests only reach indirectly, e.g. through a router.
+//
+// gen skips yawntest's own tests, so --force still rewrites their files. check counts them:
+// they are tests like any other, and the run is then shared with the error paths.
+// Without tests, or when they don't build, the names decide alone.
+func WithoutCovered(files []scan.File, coverage *Coverage, skipYawntest bool) []scan.File {
+	var dirs []string
+	seen := map[string]bool{}
+	for _, file := range files {
+		dir := filepath.Dir(file.Path)
+		if len(file.Matches) > 0 && !seen[dir] && hasTests(dir, skipYawntest) {
+			seen[dir] = true
+			dirs = append(dirs, dir)
+		}
+	}
+	coverage.prefetch(dirs, skipYawntest)
+
 	var kept []scan.File
 	for _, file := range files {
 		dir := filepath.Dir(file.Path)
-		blocks, seen := blocksByDir[dir]
-		if !seen && len(file.Matches) > 0 {
-			var err error
-			if blocks, err = ownTestCoverage(dir); err != nil {
-				return nil, err
-			}
-			blocksByDir[dir] = blocks
+		var blocks []coverBlock
+		if seen[dir] {
+			blocks, _ = coverage.blocks(dir, skipYawntest)
 		}
 
 		var matches []detect.Match
@@ -226,26 +267,14 @@ func WithoutCovered(files []scan.File) ([]scan.File, error) {
 			kept = append(kept, file)
 		}
 	}
-	return kept, nil
+	return kept
 }
 
-// ownTestCoverage skips yawntest's tests, so --force still rewrites their files. Without
-// user-written tests, or when they don't build, it returns nil and the names decide alone.
-func ownTestCoverage(dir string) ([]coverBlock, error) {
-	tests, err := filepath.Glob(filepath.Join(dir, "*_test.go"))
-	if err != nil {
-		return nil, err
-	}
-	hasOwnTests := slices.ContainsFunc(tests, func(path string) bool { return !scan.IsYawntestFile(path) })
-	if !hasOwnTests {
-		return nil, nil
-	}
-
-	blocks, err := coverProfile(dir, "-skip", "Yawntest")
-	if err != nil {
-		return nil, nil
-	}
-	return blocks, nil
+func hasTests(dir string, skipYawntest bool) bool {
+	tests, _ := filepath.Glob(filepath.Join(dir, "*_test.go"))
+	return slices.ContainsFunc(tests, func(path string) bool {
+		return !skipYawntest || !scan.IsYawntestFile(path)
+	})
 }
 
 func ran(blocks []coverBlock, fileName string, startLine, endLine int) bool {

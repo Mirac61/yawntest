@@ -150,3 +150,45 @@ func writeFile(t *testing.T, dir, name, content string) {
 		t.Fatalf("write %s: %v", name, err)
 	}
 }
+
+// A pull request: main has a.go, the branch commits b.go and leaves c.go uncommitted.
+// Since main, b.go and c.go changed; since HEAD, only c.go.
+func TestSince(t *testing.T) {
+	dir := t.TempDir()
+	runGit(t, dir, "init", "-q", "-b", "main")
+	runGit(t, dir, "config", "user.email", "test@example.com")
+	runGit(t, dir, "config", "user.name", "test")
+	writeFile(t, dir, "a.go", "package p\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-q", "-m", "a")
+	runGit(t, dir, "checkout", "-q", "-b", "feature")
+	writeFile(t, dir, "b.go", "package p\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-q", "-m", "b")
+	writeFile(t, dir, "c.go", "package p\n")
+
+	for _, test := range []struct {
+		ref  string
+		want []string
+	}{
+		{ref: "main", want: []string{"b.go", "c.go"}},
+		{ref: "", want: []string{"c.go"}},
+	} {
+		changed, err := Since(dir, test.ref)
+		if err != nil {
+			t.Fatalf("Since(%q): %v", test.ref, err)
+		}
+		var got []string
+		for path := range changed {
+			got = append(got, filepath.Base(path))
+		}
+		slices.Sort(got)
+		if !slices.Equal(got, test.want) {
+			t.Errorf("Since(%q) = %v, want %v", test.ref, got, test.want)
+		}
+	}
+
+	if _, err := Since(dir, "no-such-branch"); err == nil {
+		t.Error("Since(no-such-branch) = nil error, want one")
+	}
+}

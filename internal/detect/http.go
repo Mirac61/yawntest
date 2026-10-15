@@ -2,7 +2,8 @@ package detect
 
 import "go/ast"
 
-func detectHTTPHandler(fn *ast.FuncDecl, imports importTable) (string, bool) {
+func detectHTTPHandler(fn *ast.FuncDecl, e env) (string, bool) {
+	imports := e.imports
 	var reason string
 	switch {
 	case hasHandlerSignature(fn.Type, imports):
