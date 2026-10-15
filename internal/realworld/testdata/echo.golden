@@ -1,9 +1,4 @@
 labstack/echo at 8fd0e184dd39
 
 check: 0 candidates, 0 hints, 18 error paths, 0 packages without tests
-run --all: 18 tests in 12 files, 0 skipped, 5 findings, 2 need setup
-  finding context.go:538 isValidJSONPCallback TestYawntest_isValidJSONPCallback_RejectsEmpty: isValidJSONPCallback("") returned true, want false for empty input
-  finding ip.go:147 TrustLoopback FuzzYawntest_TrustLoopback/seed#0: TrustLoopback(false) is not deterministic: got 0x96ada0, then 0x96ad80
-  finding ip.go:154 TrustLinkLocal FuzzYawntest_TrustLinkLocal/seed#0: TrustLinkLocal(false) is not deterministic: got 0x96aaa0, then 0x96aa80
-  finding ip.go:161 TrustPrivateNet FuzzYawntest_TrustPrivateNet/seed#0: TrustPrivateNet(false) is not deterministic: got 0x96a7a0, then 0x96a780
-  finding middleware/method_override.go:110 MethodFromQuery FuzzYawntest_MethodFromQuery/seed#0: MethodFromQuery() is not deterministic: got 0x92eb40, then 0x92eb00
+run --all: 14 tests in 11 files, 0 skipped, 0 findings, 2 need setup

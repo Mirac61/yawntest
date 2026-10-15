@@ -1,7 +1,5 @@
 shopspring/decimal at e799c20820a0
 
 check: 0 candidates, 0 hints, 7 error paths, 0 packages without tests
-run --all: 9 tests in 1 files, 0 skipped, 3 findings, 0 need setup
-  finding decimal.go:344 RequireFromString FuzzYawntest_RequireFromString/seed#0: panic: can't convert  to decimal
-  finding decimal.go:367 NewFromFloat FuzzYawntest_NewFromFloat/seed#5: panic: Cannot create a Decimal from NaN
-  finding decimal.go:386 NewFromFloat32 FuzzYawntest_NewFromFloat32/seed#5: panic: Cannot create a Decimal from NaN
+run --all: 6 tests in 1 files, 0 skipped, 1 findings, 0 need setup
+  finding . : go test failed
