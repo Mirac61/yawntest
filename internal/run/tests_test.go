@@ -165,3 +165,9 @@ func TestTestsFailed(t *testing.T) {
 		t.Errorf("build: %q, want %q", got, want)
 	}
 }
+
+func TestParseTestEventsBrokenOutput(t *testing.T) {
+	if _, err := parseTestEvents(strings.NewReader(`{"Action":`)); err == nil {
+		t.Error("broken go test -json output must be an error")
+	}
+}
