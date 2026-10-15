@@ -238,11 +238,24 @@ holds what a pull request against `ref` changes, uncommitted work included. Path
 ## GitHub output (`--format github`)
 
 Every candidate becomes a `::notice`, every hint and error path a `::warning`, every finding an
-`::error`, each with `file` and `line`. GitHub Actions turns them into annotations on the diff
+`::error`, each with `file` and `line`. GitHub shows only 10 per level and step and drops the
+rest silently, so they are sorted (findings, error paths, hints, candidates, yawntest's own
+warnings), cut at 10 per level, and a last notice says how many were left out; if anything is
+cut, the candidates get 9 so that notice fits. GitHub Actions turns them into annotations on the diff
 and hides the commands from the log. Paths are made relative to `GITHUB_WORKSPACE`, the repo
 root, because that's what annotations need when yawntest runs in a subdirectory. The text
 report follows, so the log still reads like a normal run. `action.yml` does the same and also
 copies the text report into the job summary.
+
+## SARIF (`--format sarif`, `--sarif file`)
+
+The same issues as the GitHub output, from the same list (`report.issues`), as one SARIF 2.1.0
+run: a rule per kind (`untested/<pattern>`, `hint/<domain>`, `error-path`, `finding`), and a
+result per issue with its path relative to the repo root (`uriBaseId: %SRCROOT%`). Issues
+without a file, like a package whose tests don't build, are left out: code scanning rejects
+results without a location. `--sarif file` writes it next to whatever `--format` prints, which
+is how the action uploads it without a second run. The output is checked against the official
+schema while developing; the tests pin its shape.
 
 ## How yawntest itself is tested
 

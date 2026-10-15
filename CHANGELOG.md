@@ -5,7 +5,16 @@ CLI and its output. Each entry says what to adjust.
 
 ## Unreleased
 
+### New
+
+- **`--format sarif`** and **`--sarif <file>`** for GitHub code scanning and other SARIF
+  readers. The action uploads it with `sarif: true`.
+
 ### Changed
+
+- `--format github` keeps to GitHub's limit of 10 annotations per kind and step: the most
+  important go first, and a last notice says how many didn't fit. Before, the rest was
+  dropped by GitHub without a word.
 
 - **New text output.** Every location is `path:line`, the way `go vet` prints them, so a
   terminal or editor opens it on click. A declaration matching two patterns is one row
