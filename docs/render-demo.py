@@ -1,6 +1,6 @@
 # Renders a colored yawntest run to docs/demo.svg for the README.
 # Usage, from the repo root (script keeps the colors, sed drops the ^D it echoes):
-#   go install ./cmd/yawntest && cd _example && script -q /dev/null yawntest run ./... > ../run.ansi
+#   go install ./cmd/yawntest && cd _example && script -q /dev/null -c 'yawntest run ./... 2>/dev/null' > ../run.ansi
 #   rm shop/*_yawntest_test.go && cd .. && python3 docs/render-demo.py run.ansi docs/demo.svg && rm run.ansi
 import re, sys, html
 raw = open(sys.argv[1], encoding='utf-8', errors='replace').read()

@@ -10,7 +10,7 @@ only.
 That's a real run on [`_example/`](_example/), a small shop package with four planted bugs:
 a handler that answers bad input with a 500, a split that loses cents, a panic on empty
 input, and an order status the parser forgot. All four are found, each pointing at the line
-to fix.
+to fix and with the `go test` command that reruns just that case.
 
 yawntest reads your source, recognizes common shapes (HTTP handlers, JSON structs, pure
 functions, validators, encode/decode pairs, enums) and generates tests for them. It never
@@ -172,31 +172,29 @@ helper lives in another file.
 
 ```text
 $ yawntest check ./...
-shop/order.go
-  Order        json-roundtrip  line 11  has json tags
-  CreateOrder  http-handler    line 20  handler signature, decodes JSON body
-  Split        pure-func       line 30  basic params, no I/O
-  Initial      pure-func       line 42  basic params, no I/O
-shop/status.go
-  ParseStatus  pure-func       line 30  basic params, no I/O
-  ParseStatus  enum-roundtrip  line 30  Status has String and consts
-shop/user.go
-  ValidateEmail  validation  line 13  name Validate*, returns error
+Untested
+  shop/order.go:11   Order          json-roundtrip             has json tags
+  shop/order.go:20   CreateOrder    http-handler               handler signature, decodes JSON body
+  shop/order.go:30   Split          pure-func                  basic params, no I/O
+  shop/order.go:42   Initial        pure-func                  basic params, no I/O
+  shop/status.go:30  ParseStatus    pure-func, enum-roundtrip  Status has String and consts
+  shop/user.go:13    ValidateEmail  validation                 name Validate*, returns error
 
-7 untested candidates in 3 files.
-
-Hints:
+Hints
   shop/order.go:15  money  Price is a float64; floats can't hold cents exactly, use integer cents or a decimal type
   shop/order.go:52  dates  time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first
   shop/user.go:20   auth   Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it
 
-Error returns no test reaches:
-  shop/order.go:47   return 0, fmt.Errorf("parse quantity %q: %w", s, err)
-  shop/status.go:39  return 0, fmt.Errorf("unknown status %q", s)
-  shop/user.go:15    return errors.New("email needs an @")
+Error paths no test reaches
+  shop/order.go:47   ParseQuantity  return 0, fmt.Errorf("parse quantity %q: %w", s, err)
+  shop/status.go:39  ParseStatus    return 0, fmt.Errorf("unknown status %q", s)
+  shop/user.go:15    ValidateEmail  return errors.New("email needs an @")
 
-3 untested error paths.
+7 untested candidates · 3 hints · 3 untested error paths  → yawntest gen writes the tests
 ```
+
+Every location is `path:line`, so a terminal or editor opens it on click. The last line sums up
+and names the next command.
 
 - **Untested candidates:** code matching a pattern that no test file in the same directory
   mentions by name, and whose body the package's own tests never run (so a handler tested
