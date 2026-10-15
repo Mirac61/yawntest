@@ -101,6 +101,7 @@ func collect(opts options) report.Result {
 		changed = must(changes.Since(opts.root, opts.since))
 	}
 	coverage := run.NewCoverage()
+	coverage.Progress = statusLine("running tests")
 
 	if opts.command == "check" {
 		check(opts, tree, changed, coverage, &result)
@@ -110,24 +111,27 @@ func collect(opts options) report.Result {
 	result.Generated = generate(opts, tree, changed, coverage)
 	if opts.command == "run" {
 		dirs := must(scan.Dirs(opts.root, scan.IsYawntestFile))
-		result.Findings = must(run.YawntestTests(dirs))
+		result.Findings = must(run.YawntestTests(dirs, statusLine("running the generated tests")))
 	}
 	return result
 }
 
 func printText(opts options, result report.Result) {
-	if opts.command == "check" {
-		mustReport(report.Untested(os.Stdout, result.Untested))
-		mustReport(report.Hints(os.Stdout, result.Untested))
-		if !opts.static {
-			mustReport(report.ErrorPaths(os.Stdout, result.ErrorPaths, result.NoTests))
-		}
-		return
-	}
+	mustReport(report.Text(os.Stdout, result, report.View{Command: opts.command, Static: opts.static}))
+}
 
-	mustReport(report.Generated(os.Stdout, result.Generated))
-	if opts.command == "run" {
-		mustReport(report.Findings(os.Stdout, result.Findings, result.Generated))
+// statusLine shows "running tests 3/12…" on a terminal's stderr while go test runs, and
+// erases it when the batch is done. Elsewhere, like in CI logs, it shows nothing.
+func statusLine(label string) run.Progress {
+	if !isTerminal(os.Stderr) {
+		return nil
+	}
+	return func(done, total int) {
+		if done == total {
+			fmt.Fprint(os.Stderr, "\r\x1b[K")
+			return
+		}
+		fmt.Fprintf(os.Stderr, "\r\x1b[K%s %d/%d…", label, done, total)
 	}
 }
 

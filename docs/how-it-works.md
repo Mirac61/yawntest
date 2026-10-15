@@ -25,7 +25,7 @@ doesn't parse or a package whose tests don't build becomes a warning, and the re
 | `internal/gen` | Turn matches into a gofmt'ed test file | `gen.go`, one file per pattern, `seeds.go` for edge values |
 | `internal/run` | Run `go test` and turn its output into findings and error paths. Coverage runs are cached and run in parallel | `tests.go`, `coverage.go` |
 | `internal/changes` | Lines changed since `HEAD` or a merge base, and filters for scan results | `changes.go` |
-| `internal/report` | Text, JSON and GitHub output, the exit-code decision | one file per section, `result.go`, `json.go`, `github.go` |
+| `internal/report` | Text, JSON and GitHub output, the exit-code decision | `text.go` (sections and layout), one file per section, `summary.go`, `result.go`, `json.go`, `github.go` |
 
 ![UML package diagram of yawntest's imports](diagrams/packages.svg)
 

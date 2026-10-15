@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"regexp"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/Mirac61/yawntest/internal/gen"
 	"github.com/Mirac61/yawntest/internal/run"
@@ -19,36 +19,20 @@ type failure struct {
 	name    string // Split, or the test name
 	message string
 	cases   int
+	rerun   string // go test command that runs the first failed case alone
 }
 
 // generated maps the failures back to their source; it may miss files written by an earlier run.
-func Findings(w io.Writer, findings []run.Finding, generated []GeneratedFile) error {
-	real, needsSetup := splitFindings(findings)
-	if len(real) == 0 && len(needsSetup) == 0 {
-		_, err := fmt.Fprintln(w, "\nAll generated tests pass.")
-		return err
+func findings(p *printer, all []run.Finding, generated []GeneratedFile) {
+	real, needsSetup := splitFindings(all)
+	if bugs := group(real, generated); len(bugs) > 0 {
+		p.section("Findings, generated tests that fail on your code")
+		writeFailures(p, paint(red, "✗"), bugs, true)
 	}
-
-	bugs, setup := group(real, generated), group(needsSetup, generated)
-	if len(bugs) > 0 {
-		fmt.Fprintln(w, "\nFindings, generated tests that fail on your code:")
-		if err := writeFailures(w, paint(red, "✗"), bugs, true); err != nil {
-			return err
-		}
+	if setup := group(needsSetup, generated); len(setup) > 0 {
+		p.section("Needs setup, methods that panicked on a zero-valued receiver")
+		writeFailures(p, paint(gray, "·"), setup, false)
 	}
-	if len(setup) > 0 {
-		fmt.Fprintln(w, "\nNeeds setup, methods that panicked on a zero-valued receiver:")
-		if err := writeFailures(w, paint(gray, "·"), setup, false); err != nil {
-			return err
-		}
-	}
-
-	summary := plural(len(bugs), "finding")
-	if len(setup) > 0 {
-		summary += fmt.Sprintf(", %s without setup", plural(len(setup), "test"))
-	}
-	_, err := fmt.Fprintf(w, "\n%s.\n", summary)
-	return err
 }
 
 func splitFindings(findings []run.Finding) (real, needsSetup []run.Finding) {
@@ -77,6 +61,7 @@ func group(findings []run.Finding, generated []GeneratedFile) []failure {
 		index[key] = len(failures)
 		located := locate(finding.Dir, testFunc, generated)
 		located.message, located.cases = finding.Message, 1
+		located.rerun = rerunCommand(finding.Dir, finding.Test)
 		failures = append(failures, located)
 	}
 	return failures
@@ -113,17 +98,43 @@ func locate(dir, testFunc string, generated []GeneratedFile) failure {
 	return located
 }
 
-func writeFailures(w io.Writer, marker string, failures []failure, withMessage bool) error {
-	table := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	for _, failure := range failures {
-		fmt.Fprintf(table, "  %s %s\t%s", marker, paint(gray, failure.where), failure.name)
-		if withMessage {
-			fmt.Fprintf(table, "\t%s", failure.message)
-			if failure.cases > 1 {
-				fmt.Fprintf(table, " (%d cases)", failure.cases)
+// The rerun command goes under the message: empty cells keep the columns, the last cell
+// doesn't widen them. The empty first cell carries the same two (invisible) color codes as
+// the marker and location above it, since tabwriter counts bytes, not what's visible.
+func writeFailures(p *printer, marker string, failures []failure, withMessage bool) {
+	blank := paint(gray, "") + paint(gray, "")
+	p.table(func(table io.Writer) {
+		for _, failure := range failures {
+			fmt.Fprintf(table, "  %s %s\t%s", marker, paint(gray, failure.where), failure.name)
+			if withMessage {
+				fmt.Fprintf(table, "\t%s", failure.message)
+				if failure.cases > 1 {
+					fmt.Fprintf(table, " (%d cases)", failure.cases)
+				}
+			}
+			fmt.Fprintln(table)
+			if withMessage {
+				fmt.Fprintf(table, "%s\t\t%s\n", blank, paint(gray, failure.rerun))
+			} else {
+				fmt.Fprintf(table, "%s\t%s\n", blank, paint(gray, failure.rerun))
 			}
 		}
-		fmt.Fprintln(table)
+	})
+}
+
+// rerunCommand runs one failed case alone: go test ./shop -run '^FuzzYawntest_Split$/^seed#1$'.
+func rerunCommand(dir, test string) string {
+	pkg := filepath.ToSlash(dir)
+	if !filepath.IsAbs(dir) && pkg != "." && !strings.HasPrefix(pkg, "./") && !strings.HasPrefix(pkg, "../") {
+		pkg = "./" + pkg
 	}
-	return table.Flush()
+	if test == "" {
+		return "go test " + pkg
+	}
+	var parts []string
+	for _, part := range strings.Split(test, "/") {
+		parts = append(parts, "^"+regexp.QuoteMeta(part)+"$")
+	}
+	pattern := strings.ReplaceAll(strings.Join(parts, "/"), "'", `'\''`)
+	return fmt.Sprintf("go test %s -run '%s'", pkg, pattern)
 }

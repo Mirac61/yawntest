@@ -3,7 +3,6 @@ package report
 import (
 	"fmt"
 	"io"
-	"text/tabwriter"
 
 	"github.com/Mirac61/yawntest/internal/gen"
 )
@@ -15,41 +14,42 @@ type GeneratedFile struct {
 	Written  bool // false if TestPath already existed and --force was not set
 }
 
-func Generated(w io.Writer, files []GeneratedFile) error {
+func generated(p *printer, files []GeneratedFile) {
 	if len(files) == 0 {
-		_, err := fmt.Fprintln(w, "Nothing to do.")
-		return err
+		return
 	}
-
-	table := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	writtenFiles, writtenTests, skipped := 0, 0, 0
-	for _, file := range files {
-		fmt.Fprintln(table, file.Source)
-		for _, test := range file.Output.Tests {
-			if file.Written {
-				fmt.Fprintf(table, "  %s %s\t%s\t%s\n", paint(green, "✓"), test.Match.Name, test.Match.Pattern, test.Summary)
-			} else {
-				fmt.Fprintf(table, "  %s %s\t%s\t%s exists, rerun with --force\n", paint(amber, "!"), test.Match.Name, test.Match.Pattern, file.TestPath)
+	p.section("Generated")
+	p.table(func(table io.Writer) {
+		for _, file := range files {
+			for _, test := range file.Output.Tests {
+				where := location(file.Source, test.Match.Line)
+				if file.Written {
+					fmt.Fprintf(table, "  %s %s\t%s\t%s\t%s\n", paint(green, "✓"), where, test.Match.Name, test.Match.Pattern, test.Summary)
+				} else {
+					fmt.Fprintf(table, "  %s %s\t%s\t%s\t%s exists, rerun with --force\n", paint(amber, "!"), where, test.Match.Name, test.Match.Pattern, file.TestPath)
+				}
+			}
+			for _, match := range file.Output.Skipped {
+				fmt.Fprintf(table, "  %s %s\t%s\t%s\tskipped, needs inputs yawntest can't build\n", paint(gray, "·"), location(file.Source, match.Line), match.Name, match.Pattern)
 			}
 		}
-		for _, match := range file.Output.Skipped {
-			fmt.Fprintf(table, "  %s %s\t%s\tskipped, needs inputs yawntest can't build\n", paint(gray, "·"), match.Name, match.Pattern)
-		}
+	})
+}
 
-		skipped += len(file.Output.Skipped)
+type generatedCounts struct {
+	files, tests, skipped, existing int
+}
+
+func countGenerated(files []GeneratedFile) generatedCounts {
+	var counts generatedCounts
+	for _, file := range files {
+		counts.skipped += len(file.Output.Skipped)
 		if file.Written {
-			writtenFiles++
-			writtenTests += len(file.Output.Tests)
+			counts.files++
+			counts.tests += len(file.Output.Tests)
+		} else {
+			counts.existing++
 		}
 	}
-	if err := table.Flush(); err != nil {
-		return err
-	}
-
-	summary := fmt.Sprintf("Wrote %s with %s", plural(writtenFiles, "file"), plural(writtenTests, "test"))
-	if skipped > 0 {
-		summary += ", skipped " + plural(skipped, "candidate")
-	}
-	_, err := fmt.Fprintf(w, "\n%s.\n", summary)
-	return err
+	return counts
 }

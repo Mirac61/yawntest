@@ -1,7 +1,7 @@
 exit 1
 --- stdout
-shop/order.go
-  Double  pure-func  line 54  basic params, no I/O
+Untested
+  shop/order.go:54  Double  pure-func  basic params, no I/O
 
-1 untested candidate in 1 file.
+1 untested candidate  → yawntest gen writes the tests
 --- stderr
