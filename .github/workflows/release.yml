@@ -24,28 +24,7 @@ jobs:
         run: go test ./...
 
       - name: Build
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          mkdir dist
-          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
-            os=${target%/*}
-            arch=${target#*/}
-            name="yawntest_${VERSION#v}_${os}_${arch}"
-            binary=yawntest
-            [ "$os" = windows ] && binary=yawntest.exe
-            mkdir "dist/$name"
-            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
-              -ldflags "-s -w -X main.stampedVersion=${VERSION}" -o "dist/$name/$binary" ./cmd/yawntest
-            cp LICENSE README.md "dist/$name/"
-            if [ "$os" = windows ]; then
-              (cd dist && zip -qr "$name.zip" "$name")
-            else
-              tar -C dist -czf "dist/$name.tar.gz" "$name"
-            fi
-            rm -r "dist/$name"
-          done
-          (cd dist && sha256sum * > checksums.txt)
+        run: .github/scripts/build-release.sh "${{ github.ref_name }}"
 
       - name: Publish
         env:

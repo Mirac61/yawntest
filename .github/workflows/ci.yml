@@ -51,6 +51,25 @@ jobs:
       - name: Tests
         run: go test -race ./...
 
+  install:
+    name: install.sh (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Install from a local release
+        run: .github/scripts/test-install.sh
+
   self-check:
     name: yawntest checks itself
     runs-on: ubuntu-latest
