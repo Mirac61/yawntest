@@ -1,0 +1,5 @@
+google/uuid at 2d3c2a9cc518
+
+check: 0 candidates, 0 hints, 9 error paths, 0 packages without tests
+run --all: 6 tests in 2 files, 0 skipped, 1 findings, 0 need setup
+  finding uuid.go:194 MustParse FuzzYawntest_MustParse/seed#0: panic: uuid: Parse(): invalid UUID length: 0
