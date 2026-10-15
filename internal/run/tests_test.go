@@ -88,7 +88,7 @@ func TestYawntest_Fine(t *testing.T) {}
 func TestUserWritten(t *testing.T) { t.Fatal("not run by yawntest") }
 `)
 
-	findings, err := YawntestTests([]string{dir})
+	findings, err := YawntestTests([]string{dir}, nil)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestYawntestTestsReportsBuildFailure(t *testing.T) {
 	writeFile(t, dir, "go.mod", "module broken\n\ngo 1.22\n")
 	writeFile(t, dir, "broken.go", "package broken\n\nfunc Broken() int { return \"x\" }\n")
 
-	findings, err := YawntestTests([]string{dir})
+	findings, err := YawntestTests([]string{dir}, nil)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}

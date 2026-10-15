@@ -3,41 +3,66 @@ package report
 import (
 	"fmt"
 	"io"
-	"text/tabwriter"
+	"strings"
 
+	"github.com/Mirac61/yawntest/internal/detect"
 	"github.com/Mirac61/yawntest/internal/scan"
 )
 
-func Untested(w io.Writer, files []scan.File) error {
-	if !scan.HasMatches(files) {
-		_, err := fmt.Fprintln(w, "Nothing to do.")
-		return err
-	}
-
-	table := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	matchCount, fileCount := 0, 0
-	for _, file := range files {
-		if len(file.Matches) == 0 {
-			continue
-		}
-		fileCount++
-		fmt.Fprintln(table, file.Path)
-		for _, match := range file.Matches {
-			fmt.Fprintf(table, "  %s\t%s\tline %d\t%s\n", match.Name, match.Pattern, match.Line, match.Reason)
-			matchCount++
-		}
-	}
-	if err := table.Flush(); err != nil {
-		return err
-	}
-
-	_, err := fmt.Fprintf(w, "\n%s in %s.\n", plural(matchCount, "untested candidate"), plural(fileCount, "file"))
-	return err
+// candidate is one row: a declaration with every pattern that matched it.
+type candidate struct {
+	path, name string
+	line       int
+	patterns   []string
+	reason     string
 }
 
-func plural(count int, noun string) string {
-	if count == 1 {
-		return fmt.Sprintf("1 %s", noun)
+func untested(p *printer, files []scan.File) {
+	rows := candidates(files)
+	if len(rows) == 0 {
+		return
 	}
-	return fmt.Sprintf("%d %ss", count, noun)
+	p.section("Untested")
+	p.table(func(table io.Writer) {
+		for _, row := range rows {
+			fmt.Fprintf(table, "  %s\t%s\t%s\t%s\n", location(row.path, row.line), row.name, strings.Join(row.patterns, ", "), row.reason)
+		}
+	})
+}
+
+// candidates folds the matches of one declaration into one row. ParseStatus as a pure-func and
+// as an enum-roundtrip is one thing to test, so it's one line; the reason of the more specific
+// pattern says more than "basic params, no I/O".
+func candidates(files []scan.File) []candidate {
+	var rows []candidate
+	for _, file := range files {
+		index := map[string]int{}
+		for _, match := range file.Matches {
+			key := fmt.Sprintf("%s:%d", match.Name, match.Line)
+			if i, seen := index[key]; seen {
+				rows[i].patterns = append(rows[i].patterns, string(match.Pattern))
+				if match.Pattern != detect.PatternPureFunc {
+					rows[i].reason = match.Reason
+				}
+				continue
+			}
+			index[key] = len(rows)
+			rows = append(rows, candidate{
+				path:     file.Path,
+				name:     match.Name,
+				line:     match.Line,
+				patterns: []string{string(match.Pattern)},
+				reason:   match.Reason,
+			})
+		}
+	}
+	return rows
+}
+
+func matchCount(files []scan.File) int {
+	count := 0
+	for _, file := range files {
+		count += len(file.Matches)
+	}
+	return count
 }

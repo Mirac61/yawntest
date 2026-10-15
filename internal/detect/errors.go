@@ -9,6 +9,7 @@ import (
 // ErrorReturn is a return statement that hands back an error a plain unit test can trigger.
 type ErrorReturn struct {
 	Line, Column int
+	Func         string // Parse or User.Validate; "Walk (func literal)" inside a literal
 	Code         string // the return statement, first line only
 }
 
@@ -36,16 +37,26 @@ var inputErrorFuncs = map[string]map[string]bool{
 func (p *Package) ErrorReturns(fset *token.FileSet, file *ast.File, src []byte) []ErrorReturn {
 	imports := newImportTable(file)
 	var returns []ErrorReturn
+	enclosing := "" // the top-level func being walked, for naming func literals
 	ast.Inspect(file, func(node ast.Node) bool {
 		var fnType *ast.FuncType
 		var body *ast.BlockStmt
-		var receiverName, receiverType string
+		var receiverName, receiverType, name string
 		switch node := node.(type) {
+		case *ast.GenDecl:
+			enclosing = ""
+			return true
 		case *ast.FuncDecl:
 			fnType, body = node.Type, node.Body
 			receiverName, receiverType = receiverOf(node)
+			enclosing = funcName(node)
+			name = enclosing
 		case *ast.FuncLit:
 			fnType, body = node.Type, node.Body
+			name = "func literal"
+			if enclosing != "" {
+				name = enclosing + " (func literal)"
+			}
 		default:
 			return true
 		}
@@ -60,6 +71,7 @@ func (p *Package) ErrorReturns(fset *token.FileSet, file *ast.File, src []byte) 
 				returns = append(returns, ErrorReturn{
 					Line:   start.Line,
 					Column: start.Column,
+					Func:   name,
 					Code:   firstLine(string(src[start.Offset:end.Offset])),
 				})
 			}

@@ -73,8 +73,8 @@ func TestGenIsIdempotent(t *testing.T) {
 	yawntest(t, example, nil, "gen", "./...")
 	before := readYawntestFiles(t, example)
 
-	if got := yawntest(t, example, nil, "gen", "./..."); !strings.Contains(got, "Nothing to do.") {
-		t.Errorf("second gen:\n%s\nwant Nothing to do.", got)
+	if got := yawntest(t, example, nil, "gen", "./..."); !strings.Contains(got, "Nothing to do") {
+		t.Errorf("second gen:\n%s\nwant Nothing to do", got)
 	}
 	yawntest(t, example, nil, "gen", "--force", "./...")
 	if after := readYawntestFiles(t, example); after != before {
