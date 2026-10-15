@@ -105,8 +105,8 @@ func TestText(t *testing.T) {
 			want: "Nothing to do\n",
 		},
 		{
-			name:   "run: cases of one test fold into one line, with a command to rerun one",
-			view:   runV,
+			name: "run: cases of one test fold into one line, with a command to rerun one",
+			view: runV,
 			result: Result{Generated: generatedTasks, Findings: []run.Finding{
 				{Dir: "api", Test: "TestYawntest_Server_Create_BadInput/empty_request", Message: "status = 500, want < 500 for bad input"},
 				{Dir: "api", Test: "TestYawntest_Server_Create_BadInput/invalid_json", Message: "status = 500, want < 500 for bad input"},
