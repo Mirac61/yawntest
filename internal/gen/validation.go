@@ -3,6 +3,7 @@ package gen
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"text/template"
 	"unicode"
@@ -75,7 +76,8 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 	}
 
 	param := match.Params[0]
-	inputType, cases, ok := b.validationInput(param, exported(funcPart(match.Name)))
+	exportedFunc := exported(funcPart(match.Name))
+	inputType, cases, ok := b.validationInput(param, exportedFunc)
 	if !ok {
 		return "", false
 	}
@@ -84,7 +86,7 @@ func (b *builder) validation(match detect.Match) (summary string, ok bool) {
 	b.execute(validationTemplate, data)
 
 	caseCount := len(cases)
-	if match.NamedValidator && param.Basic() == "string" {
+	if match.NamedValidator && param.Basic() == "string" && exportedFunc {
 		b.execute(rejectsEmptyTemplate, data)
 		caseCount++
 	}
@@ -119,11 +121,11 @@ func (b *builder) validationInput(param detect.Field, exportedFunc bool) (inputT
 	case strings.HasPrefix(param.Type, "..."):
 		return "", nil, false
 	case param.Type != "":
-		return param.Type, b.edgeCases(param.Type), true
+		return param.Type, inputCases(b.edgeCases(param.Type), exportedFunc), true
 	case param.Underlying != "":
 		// The edge values of the basic type, converted: Slug(""), Slug("😀").
 		var cases []edgeCase
-		for _, edge := range b.edgeCases(param.Underlying) {
+		for _, edge := range inputCases(b.edgeCases(param.Underlying), exportedFunc) {
 			cases = append(cases, edgeCase{Name: edge.Name, Value: param.Expr + "(" + edge.Value + ")"})
 		}
 		return param.Expr, cases, true
@@ -144,6 +146,16 @@ func (b *builder) sliceCases(sliceType string) []edgeCase {
 		cases = append(cases, edgeCase{Name: "one element", Value: sliceType + "{" + sample + "}"})
 	}
 	return cases
+}
+
+// The empty string is only a case for exported funcs, like nil below: an unexported helper's
+// callers have already checked, e.g. that there's a next byte to look at (tidwall/gjson's
+// isDotPiperChar), or treat "" on purpose (labstack/echo's isValidJSONPCallback).
+func inputCases(cases []edgeCase, exported bool) []edgeCase {
+	if exported {
+		return cases
+	}
+	return slices.DeleteFunc(slices.Clone(cases), func(c edgeCase) bool { return c.Value == `""` })
 }
 
 // nil is only a case for exported funcs: a caller outside the package may pass it, while an
