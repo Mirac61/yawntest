@@ -93,6 +93,8 @@ func TestJSON(t *testing.T) {
   ],
   "findings": [
     {
+      "file": "calc.go",
+      "name": "Add",
       "dir": ".",
       "test": "FuzzYawntest_Add/seed#3",
       "message": "panic: overflow",
