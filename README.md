@@ -58,6 +58,7 @@ yawntest <command> [flags] [path]     # path defaults to ".", "./..." works too
 | `--json` | all | Short for `--format json` |
 | `--static` | `check`, `gen` | Run no tests. Faster, but no error paths, and only names count as tested |
 | `--force` | `gen`, `run` | Overwrite existing yawntest files |
+| `--fuzztime <d>` | `run` | After the seeds, fuzz each generated fuzz test for `d` (e.g. `10s`) with Go's fuzzing engine |
 | `--config <file>` | all | Use this config instead of the `.yawntest.json` found automatically, see [Configuration](#configuration) |
 
 Flags can go before or after the path.
@@ -294,6 +295,16 @@ annotate. Without the action, any CI runs the same thing:
 go install github.com/Mirac61/yawntest/cmd/yawntest@v0.3.0
 yawntest check --since origin/main ./...
 ```
+
+## Fuzzing for real
+
+The generated fuzz tests run only their seed values by default, which is fast and the same on
+every run. `yawntest run --fuzztime 10s` then lets Go's fuzzing engine loose on each of them,
+one after the other (go fuzzes one target at a time, on every core). yawntest says up front
+how long that takes, and skips targets whose seeds already failed.
+
+A failing input is saved by go under `testdata/fuzz/<FuzzTest>/<id>`. Commit it: from then on
+it runs as a regular test case, and the finding's rerun command runs exactly that input.
 
 ## Findings vs. "needs setup"
 
