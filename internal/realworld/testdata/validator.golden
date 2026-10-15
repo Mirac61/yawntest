@@ -1,0 +1,4 @@
+go-playground/validator at 3b54840be2c8
+
+check: 0 candidates, 0 hints, 3 error paths, 0 packages without tests
+run --all: 0 tests in 0 files, 0 skipped, 0 findings, 0 need setup

@@ -1,0 +1,4 @@
+gorilla/mux at db9d1d0073d2
+
+check: 0 candidates, 0 hints, 28 error paths, 0 packages without tests
+run --all: 2 tests in 1 files, 0 skipped, 0 findings, 0 need setup
