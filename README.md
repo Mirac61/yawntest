@@ -58,6 +58,7 @@ yawntest <command> [flags] [path]     # path defaults to ".", "./..." works too
 | `--json` | all | Short for `--format json` |
 | `--static` | `check`, `gen` | Run no tests. Faster, but no error paths, and only names count as tested |
 | `--force` | `gen`, `run` | Overwrite existing yawntest files |
+| `--all` | `gen`, `run` | Also write tests for code that already has tests |
 | `--fuzztime <d>` | `run` | After the seeds, fuzz each generated fuzz test for `d` (e.g. `10s`) with Go's fuzzing engine |
 | `--config <file>` | all | Use this config instead of the `.yawntest.json` found automatically, see [Configuration](#configuration) |
 
@@ -74,7 +75,7 @@ need setup never cause a `1`, so `yawntest check` and `yawntest run` can gate CI
 | `http-handler` | `func(http.ResponseWriter, *http.Request)`, function or method, or a constructor returning `http.HandlerFunc` | Empty request must not give a 5xx. If the body is decoded as JSON: invalid and empty bodies must give a 4xx |
 | `json-roundtrip` | Exported struct with `json` tags | Fills every field with a non-zero value, marshals, unmarshals, compares with `reflect.DeepEqual` |
 | `pure-func` | Exported function, only basic-typed params (numbers, strings, bools, `time.Time`, slices of them, or a type of the package defined as one, like `type Slug string`), has a result, no I/O in its body | Native Go fuzz test seeded with edge values. Checks no panic and that two calls return the same result |
-| `validation` | Returns only `error` or `bool` and is named `Validate*`, `IsValid*`, `Check*`, or takes a single string. No I/O in its body | Table of edge inputs that must not panic. The expected result is a `TODO(yawntest)` with `t.Skip`, since that's your decision. Named validators also get "empty input is rejected" |
+| `validation` | Returns only `error` or `bool` and is named `Validate*`, `IsValid*`, `Check*`, or takes a single string. No I/O in its body | Table of edge inputs that must not panic. The expected result is a `TODO(yawntest)` with `t.Skip`, since that's your decision. Exported named validators also get "empty input is rejected" |
 | `roundtrip` | Two pure funcs `FormatX`/`ParseX` (also `Encode`/`Decode`, `Marshal`/`Unmarshal`, `Escape`/`Unescape`, `Quote`/`Unquote`, `Compress`/`Decompress`, `Serialize`/`Deserialize`, `To`/`From`) whose types line up: `T → U` and `U → T`, either side may also return an error | Fuzz test: decoding what was encoded gives the input back, and decoding never fails on it. Inputs are strings, `[]byte`, integers and bools |
 | `enum-roundtrip` | `ParseX(string) (T, error)` where `T` has a `String() string` method and typed consts, iota blocks included | Table test: `ParseX(c.String())` gives back `c` for every const. Names like `Unknown`, `Invalid`, `numX` or `maxX` are left out |
 
@@ -364,7 +365,7 @@ build, yawntest falls back to syntax for it. Some things still slip through:
 ## More
 
 - [How it works](docs/how-it-works.md): architecture, every detection rule, design decisions
-- [Real-world runs](docs/real-world.md): what yawntest found on real projects
+- [Real-world runs](docs/real-world.md): what yawntest finds on 15 well-known Go projects, every finding sorted into bug or false positive
 - [Changelog](CHANGELOG.md): what changed between versions
 
 Try it on the example yourself, from a clone of this repo:

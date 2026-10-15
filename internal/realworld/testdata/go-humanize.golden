@@ -1,0 +1,7 @@
+dustin/go-humanize at f5b54ae13923
+
+check: 0 candidates, 0 hints, 0 error paths, 0 packages without tests
+run --all: 25 tests in 9 files, 0 skipped, 3 findings, 0 need setup
+  finding comma.go:109 CommafWithDigits FuzzYawntest_CommafWithDigits/seed#3: panic: runtime error: makeslice: len out of range
+  finding number.go:66 FormatFloat FuzzYawntest_FormatFloat/seed#1: panic: FormatFloat(): invalid positive sign directive
+  finding number.go:191 FormatInteger FuzzYawntest_FormatInteger/seed#1: panic: FormatFloat(): invalid positive sign directive

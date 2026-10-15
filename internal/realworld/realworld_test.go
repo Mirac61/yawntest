@@ -93,7 +93,7 @@ func TestCorpus(t *testing.T) {
 			run := yawntest(t, dir, "run", "--all", "--json", "./...")
 			t.Logf("%s: check %s, run %s", p.name, checkTime.Round(time.Second), time.Since(start).Round(time.Second))
 
-			got := summarize(p, check, run)
+			got := summarize(p, dir, check, run)
 			golden := filepath.Join("testdata", p.name+".golden")
 			if *update {
 				if err := os.WriteFile(golden, []byte(got), 0o644); err != nil {
@@ -186,7 +186,7 @@ func yawntest(t *testing.T, dir string, args ...string) result {
 }
 
 // summarize keeps what a rule change would move: counts, and every finding with its place.
-func summarize(p project, check, run result) string {
+func summarize(p project, dir string, check, run result) string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "%s at %s\n\n", p.repo, p.commit[:12])
 
@@ -237,8 +237,15 @@ func summarize(p project, check, run result) string {
 	for _, finding := range findings {
 		out.WriteString(finding)
 	}
+	// check and run warn about the same packages; the cache path differs per machine.
+	warned := map[string]bool{}
 	for _, w := range append(check.Warnings, run.Warnings...) {
-		fmt.Fprintf(&out, "  warning: %s\n", truncate(w, 160))
+		w = strings.ReplaceAll(w, dir+string(filepath.Separator), "")
+		w = strings.ReplaceAll(w, dir, ".")
+		if !warned[w] {
+			warned[w] = true
+			fmt.Fprintf(&out, "  warning: %s\n", truncate(w, 160))
+		}
 	}
 	return out.String()
 }

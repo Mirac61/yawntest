@@ -7,6 +7,12 @@ CLI and its output. Each entry says what to adjust.
 
 ### New
 
+- **`gen --all`, `run --all`** also write tests for code that already has tests. The
+  invariants hold either way, and well-tested projects have few untested candidates.
+- Findings in `--json` carry the `file`, `line` and `name` of the source the failed test was
+  generated for.
+- **Measured on 15 open-source projects** (cobra, gin, echo, chi, uuid, …), pinned to commits
+  and rerun weekly; each finding is triaged in [docs/real-world.md](docs/real-world.md).
 - **Types like `type Slug string`** are fuzzed now, as their basic type converted for the
   call: in pure funcs, validators, roundtrips and JSON fields. Writing the test fixture for
   this, the generated fuzz test found an overflow in it (`Level(l+1)` at 255).
@@ -50,8 +56,8 @@ CLI and its output. Each entry says what to adjust.
     equal, so the determinism check always failed.
   - Funcs that panic on bad input by design, named `Must*`/`Require*` or saying so in their
     doc comment, are no candidates anymore.
-  - Validator tables pass `nil` only to exported funcs; an unexported helper's callers have
-    already checked.
+  - Validator tables pass `nil` and `""` only to exported funcs, and only those get the
+    "empty input is rejected" test; an unexported helper's callers have already checked.
 
 - `--format github` gave wrong paths when `GITHUB_WORKSPACE` went through a symlink the
   working directory didn't, like `/var` and `/private/var` on macOS.
@@ -92,20 +98,6 @@ CLI and its output. Each entry says what to adjust.
 - `check` and `gen` run each package's tests at most once, several packages at a time.
 
 ### Fixed
-
-- A generated test that hangs no longer holds `run` up for go's 10 minutes: the generated tests
-  get 2 minutes, and the one still running is the finding ("still running after 2m0s: this
-  input makes it hang"). Before, a timeout or a crash in a goroutine showed up as "build failed".
-- When a project's own tests crash, `check` says so and names the test, instead of "tests don't
-  build".
-- False positives found by running yawntest on 15 real projects (`docs/real-world.md`):
-  - Funcs returning a func, a channel or an interface other than `error` (middleware,
-    `cobra.MinimumNArgs`) are no pure-func candidates anymore: two closures never compare
-    equal, so the determinism check always failed.
-  - Funcs that panic on bad input by design, named `Must*`/`Require*` or saying so in their
-    doc comment, are no candidates anymore.
-  - Validator tables pass `nil` only to exported funcs; an unexported helper's callers have
-    already checked.
 
 - A test calling `strings.Split` made the package's own `Split` count as tested.
 - A file that doesn't parse aborted the whole run. It's now skipped with a warning.

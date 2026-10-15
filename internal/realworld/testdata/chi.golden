@@ -1,0 +1,4 @@
+go-chi/chi at 3a33ba578e0d
+
+check: 0 candidates, 0 hints, 4 error paths, 0 packages without tests
+run --all: 8 tests in 4 files, 1 skipped, 0 findings, 2 need setup

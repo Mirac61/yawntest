@@ -1,10 +1,99 @@
 # Real-world runs
 
+## Open-source corpus
+
+yawntest runs on 15 well-known Go projects, each pinned to a commit, with nothing configured.
+`run --all` generates tests for tested code too, because these projects are well tested and the
+invariants must hold either way. So every finding here is either a bug in the project or a
+false positive of yawntest, and each one is sorted into one of the two below.
+
+The run is a test with the build tag `realworld`; it writes one summary per project to
+[`internal/realworld/testdata`](../internal/realworld/testdata), so the effect of every rule
+change shows up as a diff. It runs weekly in CI, and locally with:
+
+```bash
+go test -tags realworld ./internal/realworld            # compare
+go test -tags realworld ./internal/realworld -update    # rewrite the summaries
+```
+
+| Project | Candidates | Hints | Untested error paths | Tests written | Findings | Needs setup |
+|---|---:|---:|---:|---:|---:|---:|
+| spf13/afero | 6 | 0 | 91 | 12 | 0 | 1 |
+| go-chi/chi | 0 | 0 | 4 | 8 | 0 | 2 |
+| urfave/cli | 0 | 2 | 0 | 13 | 0 | 1 |
+| spf13/cobra | 11 | 2 | 3 | 17 | 5 | 0 |
+| shopspring/decimal | 0 | 0 | 7 | 9 | 3 | 0 |
+| labstack/echo | 0 | 0 | 18 | 18 | 5 | 2 |
+| gin-gonic/gin | 0 | 0 | 3 | 10 | 0 | 1 |
+| tidwall/gjson | 0 | 0 | 0 | 12 | 1 | 0 |
+| dustin/go-humanize | 0 | 0 | 0 | 25 | 3 | 0 |
+| pelletier/go-toml | 0 | 1 | 134 | 6 | 0 | 0 |
+| sirupsen/logrus | 0 | 0 | 2 | 7 | 0 | 0 |
+| gorilla/mux | 0 | 0 | 28 | 2 | 0 | 0 |
+| BurntSushi/toml | 4 | 0 | 8 | 7 | 0 | 0 |
+| google/uuid | 0 | 0 | 9 | 6 | 1 | 0 |
+| go-playground/validator | 0 | 0 | 3 | 1 | 1 | 0 |
+
+Findings count failed test funcs, not cases. Every run took seconds, except decimal: one
+generated test hangs there and only go's 10-minute test timeout ended it.
+
+### Triage
+
+**19 findings: 3 real, 16 false positives.** That's far above the 10 % aimed for, and the
+false positives fall into a handful of causes, each with its own fix.
+
+| Finding | Verdict | Why |
+|---|---|---|
+| go-humanize `FormatFloat("+…", n)`, `FormatInteger` | **real** | A format string with a sign directive yawntest made up panics: "invalid positive sign directive". The doc lists the formats but says nothing about panicking on others, and the format often comes from a template. |
+| go-humanize `CommafWithDigits(f, math.MaxInt)` | **real, extreme input** | `strings.Repeat` can't allocate that many zeros. Nobody asks for that many decimals, but the function doesn't guard against it. |
+| cobra `MinimumNArgs`, `MaximumNArgs`, `ExactArgs`, `RangeArgs`, `ExactValidArgs` | false positive | They return a func. Two calls give two closures, so "same input, same result" can't hold. |
+| echo `TrustLoopback`, `TrustLinkLocal`, `TrustPrivateNet`, `MethodFromQuery` | false positive | Same: option funcs that return a func. |
+| decimal `RequireFromString("")` | false positive | Panics by design, its doc says so; `Require` is the `Must` of this package. |
+| decimal `NewFromFloat(NaN)`, `NewFromFloat32(NaN)` | false positive | Documented: "NOTE: this will panic on NaN, +/-inf". |
+| uuid `MustParse("")` | false positive | A `Must` func panics on bad input, that's its job. |
+| validator `asBool("")` | false positive | Its doc says it panics if it can't convert. |
+| echo `isValidJSONPCallback("")` | false positive | The empty callback is valid on purpose, the doc says so. The validation rule expected empty input to be rejected. |
+| gjson `isDotPiperChar("")` | false positive | An unexported helper whose every caller checks there's a next byte; `""` never reaches it. |
+| decimal (hang) | false positive | `NewFromFloatWithExponent` with an exponent of `math.MaxInt32` loops for minutes. Nothing reported it as a finding, the run just took 10 minutes. |
+
+### After the fixes
+
+| Cause | Findings | Fix |
+|---|---:|---|
+| A func result compared for determinism | 9 | Funcs returning a func, a channel or an interface other than `error` are no pure-func candidates |
+| A documented panic, `Must*`, `Require*` | 5 | Not a candidate of any pattern |
+| An unexported helper given `""` | 2 | Unexported validators get no `nil`, no `""` and no "empty is rejected" test |
+
+With these, the corpus has **3 findings, all real** (go-humanize). decimal's hang is still
+there and now shows up as `go test failed`, since nothing else in that package fails anymore.
+
+The 4 hints:
+
+| Hint | Verdict | Why |
+|---|---|---|
+| cli `command_run.go:35`, `:57` auth | false positive | `token` is a token of the command line being split, not a secret. |
+| cobra `doc/md_docs.go:113`, `doc/rest_docs.go:126` dates | real | The generated docs stamp `time.Now().Format(…)` in the local time zone. |
+| go-toml `cmd/tomltestgen/main.go:105` dates | real | Same, in a code generator. |
+
+Warnings, not findings:
+
+- cobra's own tests fail when run as root (`TestFailGenFishCompletionFile` expects a write to
+  fail), so its error paths are skipped. The warning shows the last line of the test output,
+  which doesn't say why.
+- cli's `docs` is a nested module whose `go.mod` needs updating, so it's checked without type
+  information.
+
+Not in the table because they're not wrong: afero, go-toml and mux have many untested error
+paths (mostly I/O and parser errors), go-humanize and uuid have no untested candidates at all,
+because their maintainers test everything.
+
+## Earlier runs (v0.2)
+
 yawntest was run on seven real Go projects, each a fresh clone of its last commit, nothing
 configured. Three are public and shown in full below. The other four are private, so they
 appear only as numbers.
 
-## Overview
+### Overview
 
 | Project | Lines of Go | Untested candidates | Hints | Untested error paths | Tests written | Findings | Needs setup |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -23,7 +112,7 @@ about 5 seconds.
 On every project all generated files compiled, were `gofmt`- and `go vet`-clean, and a second
 run produced byte-identical files.
 
-## What the numbers mean
+### What the numbers mean
 
 - **Findings: 3, all in one project.** In the terminal UI, three text-padding helpers panic
   when asked to pad to `math.MaxInt` columns: `strings.Repeat` can't allocate that much. The
@@ -40,7 +129,7 @@ run produced byte-identical files.
   store or failing client would still test.
 - **Skipped:** constructors with params and validators whose input type yawntest can't build.
 
-## lifelog
+### lifelog
 
 ```text
 $ yawntest check
@@ -125,7 +214,7 @@ Needs setup (methods panicked on a zero-valued receiver, give them real dependen
 `handleDay` passes on a zero `Server` because it rejects the empty request before touching
 the database. The other four reach `s.db` first.
 
-## VentoryGo backend
+### VentoryGo backend
 
 The best-tested of the three. Money is integer cents throughout, so no money hints.
 
@@ -145,7 +234,7 @@ Wrote 3 files with 4 tests, skipped 1 candidate.
 All generated tests pass.
 ```
 
-## Vlanscape backend
+### Vlanscape backend
 
 ```text
 $ yawntest run
@@ -188,7 +277,7 @@ Needs setup (methods panicked on a zero-valued receiver, give them real dependen
 character string should return turns them into real validator tests: replace the `t.Skipf` line with the
 result you expect.
 
-## What the real projects changed in yawntest
+### What the real projects changed in yawntest
 
 Every problem below showed up only on real code, and each fix came with a test that would
 have caught it:
@@ -202,7 +291,7 @@ have caught it:
 | Money hint on `sizeTotal`, `totalOpacity`, `Stats.Total` | VentoryGo, lifelog | `total` no longer counts as money (`d776d3a`) |
 | `time.Now()` hint on every deadline, timer and argument: 37 hints, nearly all wrong | all | Only fires on a direct calendar read. 37 hints became 5 (`3a92189`) |
 
-## Reproducing
+### Reproducing
 
 ```bash
 go install github.com/Mirac61/yawntest/cmd/yawntest@latest

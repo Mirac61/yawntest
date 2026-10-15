@@ -221,7 +221,8 @@ template wraps them with the header, the build constraint and a sorted import bl
   Results that print the same count as equal too, because `NaN != NaN`.
 - **Validator tables:** Every case runs and then `t.Skipf("TODO(yawntest): …")`. yawntest never
   writes an expected business value. Only named validators with a string param get the extra
-  "empty input is rejected" test.
+  "empty input is rejected" test. Unexported validators get neither `nil` nor `""`, and no
+  such test: their callers have already checked, or treat `""` on purpose.
 - **Panics:** Every test body starts with a `recover`, so one panic fails one test and the
   rest of the package still runs. For methods the message names the zero-valued receiver as
   the likely cause.
