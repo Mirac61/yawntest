@@ -1,0 +1,4 @@
+exit 2
+--- stdout
+--- stderr
+yawntest: $WORK/example/.yawntest.json: can't disable "hint:mony", choose from error-paths, pattern:http-handler, pattern:json-roundtrip, pattern:pure-func, pattern:validation, pattern:roundtrip, pattern:enum-roundtrip, hint:money, hint:dates, hint:auth
