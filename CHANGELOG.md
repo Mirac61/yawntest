@@ -7,6 +7,10 @@ CLI and its output. Each entry says what to adjust.
 
 ### New
 
+- **`install.sh`** installs a release binary, checked against the release's checksums:
+  `curl -sSfL https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh | sh`.
+- `CONTRIBUTING.md`, `SECURITY.md`, issue templates (bug, false positive, feature) and an
+  animated demo in the README: `check`, `run` with findings, `run` after the fixes.
 - **`gen --all`, `run --all`** also write tests for code that already has tests. The
   invariants hold either way, and well-tested projects have few untested candidates.
 - Findings in `--json` carry the `file`, `line` and `name` of the source the failed test was
