@@ -1,18 +1,18 @@
 exit 1
 --- stdout
+::warning file=example/shop/order.go,line=47,title=yawntest%3A untested error path::No test reaches this return in ParseQuantity: return 0, fmt.Errorf("parse quantity %25q: %25w", s, err)
+::warning file=example/shop/status.go,line=39,title=yawntest%3A untested error path::No test reaches this return in ParseStatus: return 0, fmt.Errorf("unknown status %25q", s)
+::warning file=example/shop/user.go,line=15,title=yawntest%3A untested error path::No test reaches this return in ValidateEmail: return errors.New("email needs an @")
+::warning file=example/shop/order.go,line=15,title=yawntest%3A money::Price is a float64; floats can't hold cents exactly, use integer cents or a decimal type
+::warning file=example/shop/order.go,line=52,title=yawntest%3A dates::time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first
+::warning file=example/shop/user.go,line=20,title=yawntest%3A auth::Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it
 ::notice file=example/shop/order.go,line=11,title=yawntest%3A untested json-roundtrip::Order has no test yet (has json tags). `yawntest gen` writes one.
 ::notice file=example/shop/order.go,line=20,title=yawntest%3A untested http-handler::CreateOrder has no test yet (handler signature, decodes JSON body). `yawntest gen` writes one.
 ::notice file=example/shop/order.go,line=30,title=yawntest%3A untested pure-func::Split has no test yet (basic params, no I/O). `yawntest gen` writes one.
 ::notice file=example/shop/order.go,line=42,title=yawntest%3A untested pure-func::Initial has no test yet (basic params, no I/O). `yawntest gen` writes one.
-::warning file=example/shop/order.go,line=15,title=yawntest%3A money::Price is a float64; floats can't hold cents exactly, use integer cents or a decimal type
-::warning file=example/shop/order.go,line=52,title=yawntest%3A dates::time.Now().Year() depends on the server's time zone; call .UTC() or .In(loc) first
 ::notice file=example/shop/status.go,line=30,title=yawntest%3A untested pure-func::ParseStatus has no test yet (basic params, no I/O). `yawntest gen` writes one.
 ::notice file=example/shop/status.go,line=30,title=yawntest%3A untested enum-roundtrip::ParseStatus has no test yet (Status has String and consts). `yawntest gen` writes one.
 ::notice file=example/shop/user.go,line=13,title=yawntest%3A untested validation::ValidateEmail has no test yet (name Validate*, returns error). `yawntest gen` writes one.
-::warning file=example/shop/user.go,line=20,title=yawntest%3A auth::Password compared with ==; use subtle.ConstantTimeCompare so the timing doesn't leak it
-::warning file=example/shop/order.go,line=47,title=yawntest%3A untested error path::No test reaches this return: return 0, fmt.Errorf("parse quantity %25q: %25w", s, err)
-::warning file=example/shop/status.go,line=39,title=yawntest%3A untested error path::No test reaches this return: return 0, fmt.Errorf("unknown status %25q", s)
-::warning file=example/shop/user.go,line=15,title=yawntest%3A untested error path::No test reaches this return: return errors.New("email needs an @")
 Untested
   shop/order.go:11   Order          json-roundtrip             has json tags
   shop/order.go:20   CreateOrder    http-handler               handler signature, decodes JSON body

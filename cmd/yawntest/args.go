@@ -22,7 +22,7 @@ yawntest --version prints the version.
 
 var helpArgs = []string{"help", "-h", "-help", "--help"}
 
-var formats = []string{"text", "json", "github"}
+var formats = []string{"text", "json", "github", "sarif"}
 
 // errUsage is never printed: parseArgs already told the user what's wrong.
 var errUsage = errors.New("usage")
@@ -97,7 +97,8 @@ func commandFlags(opts *options) (*flag.FlagSet, bool) {
 	}
 	flags.BoolVar(&opts.changed, "changed", false, "only look at code changed since the last commit")
 	flags.StringVar(&opts.since, "since", "", "only look at code changed since the merge base with `ref`, e.g. origin/main")
-	flags.StringVar(&opts.format, "format", "text", "output `format`: text, json, or github for annotations in GitHub Actions")
+	flags.StringVar(&opts.format, "format", "text", "output `format`: text, json, github for annotations in GitHub Actions, or sarif for code scanning")
+	flags.StringVar(&opts.sarifFile, "sarif", "", "also write the result as SARIF to `file`, whatever --format is")
 	flags.BoolVar(&opts.json, "json", false, "short for --format json")
 
 	flags.Usage = func() {
