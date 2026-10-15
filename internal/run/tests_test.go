@@ -131,6 +131,41 @@ func writeFile(t *testing.T, dir, name, content string) {
 	}
 }
 
+// A timeout ends the test binary: go test reports the package as failed, not the test that
+// was running. The test that started and never finished is the finding.
+func TestParseTestEventsTimeout(t *testing.T) {
+	events := `
+{"Action":"run","Test":"FuzzYawntest_Pow"}
+{"Action":"run","Test":"FuzzYawntest_Pow/seed#0"}
+{"Action":"pass","Test":"FuzzYawntest_Pow/seed#0"}
+{"Action":"run","Test":"FuzzYawntest_Pow/seed#3"}
+{"Action":"output","Test":"FuzzYawntest_Pow/seed#3","Output":"panic: test timed out after 2m0s\n"}
+{"Action":"output","Test":"FuzzYawntest_Pow/seed#3","Output":"goroutine 65 [running]:\n"}
+{"Action":"run","Test":"TestYawntest_Other"}
+{"Action":"pass","Test":"TestYawntest_Other"}
+{"Action":"fail","Elapsed":120.02}
+`
+	findings, err := parseTestEvents(strings.NewReader(events))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Finding{{Test: "FuzzYawntest_Pow/seed#3", Message: "still running after 2m0s: this input makes it hang or take very long"}}
+	if !slices.Equal(findings, want) {
+		t.Errorf("findings = %+v, want %+v", findings, want)
+	}
+}
+
+func TestTestsFailed(t *testing.T) {
+	crash := "--- FAIL: TestFailGenFish (0.00s)\npanic: runtime error: invalid memory address or nil pointer dereference [recovered]\n\tpanic: ...\nFAIL\tgithub.com/spf13/cobra\t0.4s\n"
+	if got, want := testsFailed(crash, nil).Error(), "tests crash in TestFailGenFish: runtime error: invalid memory address or nil pointer dereference [recovered]"; got != want {
+		t.Errorf("crash: %q, want %q", got, want)
+	}
+	build := "# example.com/x\n./x_test.go:3:2: undefined: y\nFAIL\texample.com/x [build failed]\n"
+	if got, want := testsFailed(build, nil).Error(), "tests don't build: ./x_test.go:3:2: undefined: y"; got != want {
+		t.Errorf("build: %q, want %q", got, want)
+	}
+}
+
 func TestParseTestEventsBrokenOutput(t *testing.T) {
 	if _, err := parseTestEvents(strings.NewReader(`{"Action":`)); err == nil {
 		t.Error("broken go test -json output must be an error")

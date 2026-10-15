@@ -4,4 +4,4 @@ check: 11 candidates (validation 11), 2 hints (dates 2), 3 error paths, 0 packag
   hint doc/md_docs.go:113 dates: time.Now().Format() depends on the server's time zone; call .UTC() or .In(loc) first
   hint doc/rest_docs.go:126 dates: time.Now().Format() depends on the server's time zone; call .UTC() or .In(loc) first
 run --all: 12 tests in 4 files, 3 skipped, 0 findings, 0 need setup
-  warning: .: error paths skipped, tests don't build: [Debug] [Error] Error while parsing flags from args [--localroot value]: unknown flag: --localroot
+  warning: .: error paths skipped, tests crash in TestFailGenFishCompletionFile: runtime error: invalid memory address or nil pointer dereference [recovered]

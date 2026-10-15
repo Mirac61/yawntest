@@ -2,4 +2,4 @@ shopspring/decimal at e799c20820a0
 
 check: 0 candidates, 0 hints, 7 error paths, 0 packages without tests
 run --all: 6 tests in 1 files, 0 skipped, 1 findings, 0 need setup
-  finding . : go test failed
+  finding decimal.go:447 NewFromFloatWithExponent FuzzYawntest_NewFromFloatWithExponent/seed#3: still running after 2m0s: this input makes it hang or take very long
