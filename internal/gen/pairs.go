@@ -14,8 +14,11 @@ func FuzzYawntest_{{.Encode}}_Roundtrip(f *testing.F) {
 	f.Add({{.}})
 {{- end}}
 
-	f.Fuzz(func(t *testing.T, {{.Arg}} {{.ArgType}}) {
+	f.Fuzz(func(t *testing.T, {{.FuzzArg}} {{.ArgType}}) {
 		{{.NoPanic}}
+{{- if .Setup}}
+		{{.Setup}}
+{{- end}}
 {{- if .EncodeErr}}
 		encoded, err := {{.Encode}}({{.Arg}})
 		if err != nil {
@@ -83,7 +86,9 @@ func (b *builder) pairRoundtrip(match detect.Match) string {
 		"Encode":    match.Name,
 		"Decode":    match.Partner,
 		"Seeds":     arg.seeds,
-		"Arg":       arg.name,
+		"FuzzArg":   arg.name,
+		"Setup":     arg.setup,
+		"Arg":       arg.callArg,
 		"ArgType":   arg.fuzzType,
 		"NoPanic":   noPanic(""),
 		"EncodeErr": len(match.Results) == 2,

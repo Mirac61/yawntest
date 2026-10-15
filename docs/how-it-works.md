@@ -99,7 +99,10 @@ can't call them.
 ### pure-func
 
 - Exported, no receiver, no type params, at least one param and a result.
-- Every param is a basic type, `time.Time`, a slice or a variadic of those.
+- Every param is a basic type, `time.Time`, a slice or a variadic of those, or a type of the
+  package defined as a basic type (`type Slug string`, `type Cents int64`). Those are fuzzed
+  as the basic type and converted for the call (`s := Slug(sRaw)`); validators get the edge
+  values converted (`Slug("😀")`), and JSON fields of such a type get a value too.
 - The body, and every func of the package it calls, touches none of these: `go` statements,
   the packages `os`, `io`, `bufio`, `net`, `net/http`, `database/sql`, `log`, `syscall` and
   the `rand` packages, `time.Now`/`Since`/`Sleep`/`After`/timers, `filepath.Abs`/`Glob`/
