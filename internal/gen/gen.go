@@ -153,7 +153,7 @@ func (b *builder) render(pkg, buildConstraint string) ([]byte, error) {
 
 	code, err := format.Source(source.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("format generated code: %w", err)
+		return nil, fmt.Errorf("format generated code: %w", err) //yawntest:ignore the templates always give valid Go; the golden tests prove it
 	}
 	return code, nil
 }

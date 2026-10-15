@@ -166,6 +166,7 @@ func coverProfile(dir string, testArgs ...string) ([]coverBlock, error) {
 
 	data, err := os.ReadFile(profile.Name())
 	if err != nil || len(data) == 0 {
+		//yawntest:ignore needs a go tool that writes no profile at all
 		return nil, fmt.Errorf("tests don't run: %s", goOutputLine(string(output), runErr))
 	}
 	blocks, err := parseProfile(data)

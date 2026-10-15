@@ -66,6 +66,9 @@ jobs:
       - name: Build
         run: go build -o "$RUNNER_TEMP/yawntest" ./cmd/yawntest
 
+      - name: yawntest checks itself
+        run: '"$RUNNER_TEMP/yawntest" check ./...'
+
       # The example has planted bugs, so both runs must exit 1 with the output the README shows.
       - name: check finds the candidates
         working-directory: _example
