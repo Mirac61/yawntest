@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/Mirac61/yawntest/internal/scan"
@@ -146,6 +147,68 @@ func TestTypesFollowCallsAcrossPackages(t *testing.T) {
 				t.Errorf("error returns = %q, want %q", errorReturns, test.errorReturns)
 			}
 		})
+	}
+}
+
+// The CLI scans the path as typed, ./a/... from the module root: relative dirs must find
+// their types too.
+func TestRelativePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs go list")
+	}
+	root := t.TempDir()
+	for name, content := range module {
+		path := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chdir(wd) })
+
+	loader, _, err := New("a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tree, err := scan.Scan("a", scan.Options{Types: loader})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range tree.Files {
+		for _, match := range file.Matches {
+			if match.Name == "Pure" {
+				t.Errorf("Pure is a candidate: types weren't used for the relative path %s", file.Path)
+			}
+		}
+	}
+}
+
+func TestAddKeepsTheModulesPackages(t *testing.T) {
+	l := &Loader{packages: map[string]listed{}, dirs: map[string]string{}, exports: map[string]string{}}
+	stream := `{"ImportPath":"fmt","Standard":true,"DepOnly":true,"Export":"/cache/fmt"}
+{"ImportPath":"example.com/m/db","Dir":"/m/db","DepOnly":true,"Module":{"Main":true},"Export":"/cache/db"}
+{"ImportPath":"example.com/dep","Dir":"/mod/dep","DepOnly":true,"Export":"/cache/dep"}
+{"ImportPath":"example.com/m/api","Dir":"/m/api","Module":{"Main":true}}
+`
+	count, err := l.add(strings.NewReader(stream))
+	if err != nil || count != 4 {
+		t.Fatalf("add = %d, %v", count, err)
+	}
+	// The module's own db is kept although only api was asked for; std and other modules aren't.
+	if _, ok := l.Dir("example.com/m/db"); !ok || len(l.packages) != 2 || len(l.exports) != 3 {
+		t.Errorf("packages = %v, exports = %v", l.packages, l.exports)
+	}
+	if _, err := l.add(strings.NewReader(`{"ImportPath":`)); err == nil {
+		t.Error("broken go list output must be an error")
 	}
 }
 

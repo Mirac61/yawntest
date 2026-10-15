@@ -130,3 +130,9 @@ func writeFile(t *testing.T, dir, name, content string) {
 		t.Fatalf("write %s: %v", name, err)
 	}
 }
+
+func TestParseTestEventsBrokenOutput(t *testing.T) {
+	if _, err := parseTestEvents(strings.NewReader(`{"Action":`)); err == nil {
+		t.Error("broken go test -json output must be an error")
+	}
+}

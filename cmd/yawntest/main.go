@@ -262,7 +262,7 @@ func generateFile(file scan.File, force bool) (report.GeneratedFile, error) {
 
 	output, err := gen.File(file.Package, file.BuildConstraint, file.Matches)
 	if err != nil {
-		return result, fmt.Errorf("generate %s: %w", file.Path, err)
+		return result, fmt.Errorf("generate %s: %w", file.Path, err) //yawntest:ignore see gen.File: only a broken template
 	}
 	result.Output = output
 	if output.Code == nil {
