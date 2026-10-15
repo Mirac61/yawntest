@@ -3,6 +3,7 @@ package report
 import (
 	"encoding/json"
 	"io"
+	"strings"
 )
 
 type jsonResult struct {
@@ -52,6 +53,9 @@ type jsonTest struct {
 }
 
 type jsonFinding struct {
+	File       string `json:"file,omitempty"` // the source the failed test was generated for
+	Line       int    `json:"line,omitempty"`
+	Name       string `json:"name,omitempty"`
 	Dir        string `json:"dir"`
 	Test       string `json:"test,omitempty"`
 	Message    string `json:"message"`
@@ -78,7 +82,10 @@ func JSON(w io.Writer, result Result) error {
 		out.Generated = append(out.Generated, generatedJSON(file))
 	}
 	for _, finding := range result.Findings {
+		testFunc, _, _ := strings.Cut(finding.Test, "/")
+		source := locate(finding.Dir, testFunc, result.Generated)
 		out.Findings = append(out.Findings, jsonFinding{
+			File: source.file, Line: source.line, Name: source.name,
 			Dir: finding.Dir, Test: finding.Test, Message: finding.Message, NeedsSetup: finding.NeedsSetup,
 			Rerun: rerunCommand(finding.Dir, finding.Test),
 		})

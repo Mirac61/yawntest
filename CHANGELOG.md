@@ -7,6 +7,12 @@ CLI and its output. Each entry says what to adjust.
 
 ### New
 
+- **`gen --all`, `run --all`** also write tests for code that already has tests. The
+  invariants hold either way, and well-tested projects have few untested candidates.
+- Findings in `--json` carry the `file`, `line` and `name` of the source the failed test was
+  generated for.
+- **Measured on 15 open-source projects** (cobra, gin, echo, chi, uuid, …), pinned to commits
+  and rerun weekly; each finding is triaged in [docs/real-world.md](docs/real-world.md).
 - **Types like `type Slug string`** are fuzzed now, as their basic type converted for the
   call: in pure funcs, validators, roundtrips and JSON fields. Writing the test fixture for
   this, the generated fuzz test found an overflow in it (`Level(l+1)` at 255).
