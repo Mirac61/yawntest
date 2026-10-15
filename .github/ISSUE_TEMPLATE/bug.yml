@@ -1,0 +1,25 @@
+name: Bug
+description: yawntest crashed, wrote a test that doesn't compile, or did something else wrong.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The command you ran, what it printed, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: The code
+      description: The smallest snippet that shows it, ideally a whole file that compiles.
+      render: go
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `yawntest --version` and `go version`.
+      placeholder: yawntest v0.3.0, go1.23.4 linux/amd64
+    validations:
+      required: true
