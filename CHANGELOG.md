@@ -3,7 +3,14 @@
 yawntest follows [SemVer](https://semver.org) and is pre-1.0, so a minor version can change the
 CLI and its output. Each entry says what to adjust.
 
-## v0.3.0 (unreleased)
+## Unreleased
+
+### Fixed
+
+- `--format github` gave wrong paths when `GITHUB_WORKSPACE` went through a symlink the
+  working directory didn't, like `/var` and `/private/var` on macOS.
+
+## v0.3.0
 
 ### New
 

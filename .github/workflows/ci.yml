@@ -51,8 +51,8 @@ jobs:
       - name: Tests
         run: go test -race ./...
 
-  example:
-    name: Example (CLI end to end)
+  self-check:
+    name: yawntest checks itself
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,58 +63,9 @@ jobs:
         with:
           go-version: stable
 
-      - name: Build
-        run: go build -o "$RUNNER_TEMP/yawntest" ./cmd/yawntest
-
-      - name: yawntest checks itself
-        run: '"$RUNNER_TEMP/yawntest" check ./...'
-
-      # The example has planted bugs, so both runs must exit 1 with the output the README shows.
-      - name: check finds the candidates
-        working-directory: _example
-        run: |
-          set +e
-          "$RUNNER_TEMP/yawntest" check ./... | tee check.txt
-          code=${PIPESTATUS[0]}
-          set -e
-          test "$code" -eq 1
-          grep -q "7 untested candidates in 3 files." check.txt
-          grep -q "3 untested error paths." check.txt
-
-      - name: run finds the planted bugs
-        working-directory: _example
-        run: |
-          set +e
-          "$RUNNER_TEMP/yawntest" run ./... | tee run.txt
-          code=${PIPESTATUS[0]}
-          set -e
-          test "$code" -eq 1
-          grep -q "Wrote 3 files with 7 tests" run.txt
-          grep -q 'ParseStatus("cancelled") failed' run.txt
-          grep -q "4 findings." run.txt
-
-      - name: Generated files are gofmt and vet clean
-        working-directory: _example
-        run: |
-          test -z "$(gofmt -l .)"
-          go vet ./...
-
-      - name: A second run changes nothing
-        working-directory: _example
-        run: |
-          before=$(cat shop/*_yawntest_test.go | sha256sum)
-          "$RUNNER_TEMP/yawntest" gen ./... | tee second.txt
-          grep -q "Nothing to do." second.txt
-          "$RUNNER_TEMP/yawntest" gen --force ./... > /dev/null
-          test "$before" = "$(cat shop/*_yawntest_test.go | sha256sum)"
-
-      - name: GitHub annotations point at the right lines
-        working-directory: _example
-        run: |
-          set +e
-          "$RUNNER_TEMP/yawntest" check --format github --static ./... > annotations.txt
-          set -e
-          grep -q '^::warning file=_example/shop/order.go,line=15,title=yawntest%3A money::' annotations.txt
+      # The CLI end to end on the example runs in go test (cmd/yawntest/main_test.go).
+      - name: No untested candidates or error paths in yawntest
+        run: go run ./cmd/yawntest check ./...
 
   action:
     name: The GitHub Action on the example
