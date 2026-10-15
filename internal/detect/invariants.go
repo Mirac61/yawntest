@@ -1,10 +1,13 @@
 package detect
 
+import "strings"
+
 type Invariant string
 
 const (
 	InvariantPartsSumToTotal   Invariant = "parts sum to total"
 	InvariantEndNotBeforeStart Invariant = "end not before start"
+	InvariantIdempotent        Invariant = "idempotent"
 )
 
 var (
@@ -12,6 +15,10 @@ var (
 	startWords      = map[string]bool{"start": true, "from": true, "begin": true}
 	endWords        = map[string]bool{"end": true, "to": true, "until": true, "due": true, "deadline": true}
 	rangeWords      = map[string]bool{"range": true, "bounds": true, "period": true, "window": true, "span": true}
+
+	// Funcs named like this promise a canonical form, and the canonical form of a canonical
+	// form is itself. Sanitize and Escape are left out: escaping twice is a different string.
+	idempotentPrefixes = []string{"Normalize", "Canonical", "Canonicalize", "Clean", "Slugify"}
 )
 
 var integerTypes = map[string]bool{
@@ -26,6 +33,8 @@ func invariantOf(funcName string, params, results []Field) Invariant {
 		return InvariantPartsSumToTotal
 	case returnsTimeRange(funcName, results):
 		return InvariantEndNotBeforeStart
+	case normalizes(funcName, params, results):
+		return InvariantIdempotent
 	default:
 		return ""
 	}
@@ -54,4 +63,24 @@ func returnsTimeRange(funcName string, results []Field) bool {
 		return hasWord(funcName, rangeWords)
 	}
 	return hasWord(start, startWords) && hasWord(end, endWords)
+}
+
+// NormalizeEmail(s string) string: one param and a result of the same scalar type, so the
+// result can be fed back in.
+func normalizes(funcName string, params, results []Field) bool {
+	if len(params) != 1 || len(results) != 1 {
+		return false
+	}
+	param, result := params[0], results[0]
+	scalar := param.Type != "" && !strings.HasPrefix(param.Type, "[]") && !strings.HasPrefix(param.Type, "...")
+	if !scalar || param.Expr != result.Expr {
+		return false
+	}
+	for _, prefix := range idempotentPrefixes {
+		rest, found := strings.CutPrefix(funcName, prefix)
+		if found && (rest == "" || startsUpper(rest)) {
+			return true
+		}
+	}
+	return false
 }

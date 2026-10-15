@@ -9,8 +9,10 @@ type jsonResult struct {
 	Candidates []jsonCandidate     `json:"candidates,omitempty"`
 	Hints      []jsonHint          `json:"hints,omitempty"`
 	ErrorPaths []jsonErrorPath     `json:"errorPaths,omitempty"`
+	NoTests    []string            `json:"noTests,omitempty"`
 	Generated  []jsonGeneratedFile `json:"generated,omitempty"`
 	Findings   []jsonFinding       `json:"findings,omitempty"`
+	Warnings   []string            `json:"warnings,omitempty"`
 }
 
 type jsonCandidate struct {
@@ -56,7 +58,7 @@ type jsonFinding struct {
 }
 
 func JSON(w io.Writer, result Result) error {
-	var out jsonResult
+	out := jsonResult{NoTests: result.NoTests, Warnings: result.Warnings}
 	for _, file := range result.Untested {
 		for _, match := range file.Matches {
 			out.Candidates = append(out.Candidates, jsonCandidate{

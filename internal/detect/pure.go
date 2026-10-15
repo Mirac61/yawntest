@@ -12,6 +12,8 @@ var ioPackages = map[string]bool{
 	"net": true, "net/http": true, "database/sql": true,
 	"log": true, "log/slog": true,
 	"crypto/rand": true, "math/rand": true, "math/rand/v2": true,
+	"os/user": true, "os/signal": true, "net/smtp": true, "net/rpc": true, "crypto/tls": true,
+	"runtime/debug": true, "testing": true,
 }
 
 var impureTimeFuncs = map[string]bool{
@@ -21,7 +23,12 @@ var impureTimeFuncs = map[string]bool{
 
 var fmtIOPrefixes = []string{"Print", "Fprint", "Scan", "Fscan"}
 
-func detectPureFunc(fn *ast.FuncDecl, imports importTable) (string, bool) {
+// Packages that are mostly pure but have a few funcs touching the file system.
+var impureMembers = map[string]map[string]bool{
+	"path/filepath": {"Abs": true, "EvalSymlinks": true, "Glob": true, "Walk": true, "WalkDir": true},
+}
+
+func detectPureFunc(fn *ast.FuncDecl, e env) (string, bool) {
 	isPlainFunc := fn.Recv == nil && fn.Name.IsExported() && fn.Type.TypeParams == nil
 	if !isPlainFunc {
 		return "", false
@@ -31,7 +38,7 @@ func detectPureFunc(fn *ast.FuncDecl, imports importTable) (string, bool) {
 		return "", false
 	}
 
-	params := fields(fn.Type.Params, imports)
+	params := fields(fn.Type.Params, e.imports)
 	if len(params) == 0 {
 		return "", false
 	}
@@ -41,25 +48,10 @@ func detectPureFunc(fn *ast.FuncDecl, imports importTable) (string, bool) {
 		}
 	}
 
-	if hasSideEffects(fn.Body, imports) {
+	if e.hasSideEffects(fn) {
 		return "", false
 	}
 	return "basic params, no I/O", true
-}
-
-// ponytail: misses I/O hidden in called funcs; needs go/types.
-func hasSideEffects(body *ast.BlockStmt, imports importTable) bool {
-	return containsNode(body, func(node ast.Node) bool {
-		switch node := node.(type) {
-		case *ast.GoStmt:
-			return true
-		case *ast.SelectorExpr:
-			pkgPath, member, ok := imports.resolve(node)
-			return ok && isImpureMember(pkgPath, member)
-		default:
-			return false
-		}
-	})
 }
 
 func isImpureMember(pkgPath, member string) bool {
@@ -71,6 +63,6 @@ func isImpureMember(pkgPath, member string) bool {
 			return strings.HasPrefix(member, prefix)
 		})
 	default:
-		return ioPackages[pkgPath]
+		return ioPackages[pkgPath] || impureMembers[pkgPath][member]
 	}
 }

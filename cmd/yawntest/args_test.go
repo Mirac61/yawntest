@@ -15,19 +15,31 @@ func TestParseArgs(t *testing.T) {
 		want    options
 		wantErr bool
 	}{
-		{name: "check", args: []string{"check"}, want: options{command: "check", root: "."}},
-		{name: "path with dots", args: []string{"gen", "./..."}, want: options{command: "gen", root: "."}},
-		{name: "subdir", args: []string{"check", "internal/..."}, want: options{command: "check", root: "internal"}},
+		{name: "check", args: []string{"check"}, want: options{command: "check", root: ".", format: "text"}},
+		{name: "path with dots", args: []string{"gen", "./..."}, want: options{command: "gen", root: ".", format: "text"}},
+		{name: "subdir", args: []string{"check", "internal/..."}, want: options{command: "check", root: "internal", format: "text"}},
 		{
 			name: "all flags",
 			args: []string{"run", "--force", "--changed", "--json", "api"},
-			want: options{command: "run", root: "api", force: true, changed: true, json: true},
+			want: options{command: "run", root: "api", force: true, changed: true, json: true, format: "json"},
+		},
+		{
+			name: "flags after the path",
+			args: []string{"check", "./...", "--static", "--since", "origin/main"},
+			want: options{command: "check", root: ".", static: true, since: "origin/main", format: "text"},
+		},
+		{
+			name: "github format",
+			args: []string{"check", "--format=github", "api/..."},
+			want: options{command: "check", root: "api", format: "github"},
 		},
 		{name: "no command", args: nil, wantErr: true},
 		{name: "unknown command", args: []string{"test"}, wantErr: true},
 		{name: "old flag style", args: []string{"--check", "."}, wantErr: true},
 		{name: "check writes nothing, so no --force", args: []string{"check", "--force"}, wantErr: true},
-		{name: "flag after path", args: []string{"check", ".", "--json"}, wantErr: true},
+		{name: "run always runs tests, so no --static", args: []string{"run", "--static"}, wantErr: true},
+		{name: "two paths", args: []string{"check", "a", "b"}, wantErr: true},
+		{name: "unknown format", args: []string{"check", "--format", "xml"}, wantErr: true},
 	}
 
 	for _, test := range tests {

@@ -62,6 +62,12 @@ func detectFixture(t *testing.T, path string) string {
 		if match.Invariant != "" {
 			fmt.Fprintf(&out, "    invariant: %s\n", match.Invariant)
 		}
+		if match.Partner != "" {
+			fmt.Fprintf(&out, "    partner: %s\n", match.Partner)
+		}
+		if len(match.Consts) > 0 {
+			fmt.Fprintf(&out, "    consts: %s\n", strings.Join(match.Consts, ", "))
+		}
 		if len(match.Fields) > 0 {
 			fmt.Fprintf(&out, "    fields: %s\n", formatFields(match.Fields))
 		}

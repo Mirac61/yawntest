@@ -9,6 +9,8 @@ const (
 	PatternJSONRoundtrip Pattern = "json-roundtrip"
 	PatternPureFunc      Pattern = "pure-func"
 	PatternValidation    Pattern = "validation"
+	PatternRoundtrip     Pattern = "roundtrip"
+	PatternEnumRoundtrip Pattern = "enum-roundtrip"
 )
 
 type Field struct {
@@ -32,6 +34,12 @@ type Match struct {
 	NamedValidator bool
 	DecodesJSON    bool      // http handlers that read a JSON request body
 	Invariant      Invariant // pure funcs: an extra property the fuzz test checks
+
+	// roundtrip: the decode func (ParsePrice for FormatPrice) and its results.
+	// enum-roundtrip: the enum type (Color for ParseColor).
+	Partner        string
+	PartnerResults []Field
+	Consts         []string // enum-roundtrip: the consts that must parse back
 }
 
 func (m Match) Symbol() string {

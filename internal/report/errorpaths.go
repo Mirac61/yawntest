@@ -3,14 +3,23 @@ package report
 import (
 	"fmt"
 	"io"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/Mirac61/yawntest/internal/run"
 )
 
-func ErrorPaths(w io.Writer, paths []run.ErrorPath) error {
+// noTests are dirs without any test; their error returns are summed up, not listed.
+func ErrorPaths(w io.Writer, paths []run.ErrorPath, noTests []string) error {
+	if len(noTests) > 0 {
+		fmt.Fprintf(w, "\nNo tests at all, so no error paths listed: %s\n", strings.Join(noTests, ", "))
+	}
 	if len(paths) == 0 {
-		_, err := fmt.Fprintln(w, "\nEvery error return is reached by a test.")
+		message := "Every error return worth a test is reached by one."
+		if len(noTests) > 0 {
+			message = "Every error return worth a test in the tested packages is reached by one."
+		}
+		_, err := fmt.Fprintln(w, "\n"+message)
 		return err
 	}
 
