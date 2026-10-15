@@ -16,6 +16,11 @@ CLI and its output. Each entry says what to adjust.
 
 ### Changed
 
+- **Type information**, with the standard library alone (`go list -export` and `go/types`).
+  Purity and error paths now follow calls into other packages of the module, tell methods
+  from funcs (`time.Time.After` is not the timer `time.After`), and see what a method on a
+  call's result is (`json.NewDecoder(r).Decode` only depends on its input, `exec.Command(…).Run`
+  is I/O). `--static` skips it. Packages that don't build fall back to syntax.
 - `--format github` keeps to GitHub's limit of 10 annotations per kind and step: the most
   important go first, and a last notice says how many didn't fit. Before, the rest was
   dropped by GitHub without a word.

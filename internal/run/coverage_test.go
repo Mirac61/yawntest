@@ -85,7 +85,7 @@ func MustParse(s string) int {
 `)
 	writeFile(t, dir, "parse_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestParse(t *testing.T) { Parse(\"1\") }\n")
 
-	tree, err := scan.Scan(dir, nil)
+	tree, err := scan.Scan(dir, scan.Options{})
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestUntestedErrorPathsBrokenTests(t *testing.T) {
 	writeFile(t, dir, "parse.go", "package cover\n\nimport \"strconv\"\n\nfunc Parse(s string) (int, error) {\n\tn, err := strconv.Atoi(s)\n\tif err != nil {\n\t\treturn 0, err\n\t}\n\treturn n, nil\n}\n")
 	writeFile(t, dir, "parse_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestParse(t *testing.T) { undefined() }\n")
 
-	tree, err := scan.Scan(dir, nil)
+	tree, err := scan.Scan(dir, scan.Options{})
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -156,7 +156,7 @@ func route(op string, n int) int {
 	// --force: yawntest's own tests must not count, or their files would never be rewritten.
 	writeFile(t, dir, "calc_yawntest_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestYawntest_Quadruple(t *testing.T) { route(\"\", 1) }\n")
 
-	tree, err := scan.Scan(dir, nil)
+	tree, err := scan.Scan(dir, scan.Options{})
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestWithoutCoveredBrokenTests(t *testing.T) {
 	writeFile(t, dir, "calc.go", "package cover\n\nfunc Double(n int) int { return n * 2 }\n")
 	writeFile(t, dir, "calc_test.go", "package cover\n\nimport \"testing\"\n\nfunc TestX(t *testing.T) { undefined() }\n")
 
-	tree, err := scan.Scan(dir, nil)
+	tree, err := scan.Scan(dir, scan.Options{})
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}

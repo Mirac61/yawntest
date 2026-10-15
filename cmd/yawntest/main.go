@@ -14,6 +14,7 @@ import (
 	"github.com/Mirac61/yawntest/internal/changes"
 	"github.com/Mirac61/yawntest/internal/config"
 	"github.com/Mirac61/yawntest/internal/gen"
+	"github.com/Mirac61/yawntest/internal/load"
 	"github.com/Mirac61/yawntest/internal/report"
 	"github.com/Mirac61/yawntest/internal/run"
 	"github.com/Mirac61/yawntest/internal/scan"
@@ -103,9 +104,16 @@ func main() {
 
 func collect(opts options) report.Result {
 	cfg := must(config.Load(opts.config, opts.root))
-	tree := must(scan.Scan(opts.root, cfg.Excluded))
-	tree.Files = cfg.Apply(tree.Files)
 	result := report.Result{}
+	scanOptions := scan.Options{Exclude: cfg.Excluded}
+	if !opts.static {
+		// Types let detection follow calls into other packages. --static stays fast: no go list.
+		loader, warnings := must2(load.New(opts.root))
+		scanOptions.Types = loader
+		result.Warnings = append(result.Warnings, warnings...)
+	}
+	tree := must(scan.Scan(opts.root, scanOptions))
+	tree.Files = cfg.Apply(tree.Files)
 	for _, broken := range tree.Broken {
 		result.Warnings = append(result.Warnings, fmt.Sprintf("skipped %s, it doesn't parse: %v", broken.Path, broken.Err))
 	}
