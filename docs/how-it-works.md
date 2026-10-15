@@ -103,6 +103,11 @@ can't call them.
   package defined as a basic type (`type Slug string`, `type Cents int64`). Those are fuzzed
   as the basic type and converted for the call (`s := Slug(sRaw)`); validators get the edge
   values converted (`Slug("😀")`), and JSON fields of such a type get a value too.
+- No result is a func, a channel, or an interface other than `error`: two calls of
+  `NewMiddleware()` return two closures that never compare equal. With type information this
+  is exact; without, it sees literal types, the package's own named ones and `http.Handler`.
+- Not named `Must*`/`Require*` and no doc comment mentioning a panic: those panic on bad input
+  by design (this applies to every pattern).
 - The body, and every func of the package it calls, touches none of these: `go` statements,
   the packages `os`, `io`, `bufio`, `net`, `net/http`, `database/sql`, `log`, `syscall` and
   the `rand` packages, `time.Now`/`Since`/`Sleep`/`After`/timers, `filepath.Abs`/`Glob`/
@@ -216,7 +221,8 @@ template wraps them with the header, the build constraint and a sorted import bl
   Results that print the same count as equal too, because `NaN != NaN`.
 - **Validator tables:** Every case runs and then `t.Skipf("TODO(yawntest): …")`. yawntest never
   writes an expected business value. Only named validators with a string param get the extra
-  "empty input is rejected" test.
+  "empty input is rejected" test. Unexported validators get neither `nil` nor `""`, and no
+  such test: their callers have already checked, or treat `""` on purpose.
 - **Panics:** Every test body starts with a `recover`, so one panic fails one test and the
   rest of the package still runs. For methods the message names the zero-valued receiver as
   the likely cause.

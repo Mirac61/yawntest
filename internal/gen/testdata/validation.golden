@@ -273,3 +273,53 @@ func TestYawntest_IsValidName_RejectsEmpty(t *testing.T) {
 		t.Error("IsValidName(\"\") returned true, want false for empty input")
 	}
 }
+
+// yawntest: validation / no panic; expected results are up to you
+func TestYawntest_checkNode(t *testing.T) {
+	tests := []struct {
+		name  string
+		input *node
+	}{
+		{name: "zero value", input: new(node)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
+			ok := checkNode(test.input)
+			t.Skipf("TODO(yawntest): expected result for %s; got %v", test.name, ok)
+		})
+	}
+}
+
+// yawntest: validation / no panic; expected results are up to you
+func TestYawntest_isOperator(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{name: "space", input: " "},
+		{name: "single char", input: "a"},
+		{name: "very long", input: strings.Repeat("x", 10000)},
+		{name: "unicode", input: "ünïcødé"},
+		{name: "emoji", input: "😀"},
+		{name: "null byte", input: "\x00"},
+		{name: "sql injection", input: "' OR 1=1 --"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
+			ok := isOperator(test.input)
+			t.Skipf("TODO(yawntest): expected result for %s; got %v", test.name, ok)
+		})
+	}
+}

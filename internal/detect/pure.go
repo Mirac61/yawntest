@@ -48,10 +48,39 @@ func detectPureFunc(fn *ast.FuncDecl, e env) (string, bool) {
 		}
 	}
 
+	// Funcs, channels and interfaces (other than error) can't be compared for determinism:
+	// two calls of NewMiddleware() return two closures that are never equal.
+	if e.pkg.uncomparableResult(fn, e.imports) {
+		return "", false
+	}
 	if e.hasSideEffects(fn) {
 		return "", false
 	}
 	return "basic params, no I/O", true
+}
+
+// mustPrefixes name funcs that panic on bad input by convention: MustParse, RequireFromString.
+var mustPrefixes = []string{"Must", "Require"}
+
+// Words that make a comment about a panic a note about a bug, not a contract.
+var bugMarkers = []string{"bug", "todo", "fixme", "xxx"}
+
+// panicsByDesign: named Must*/Require*, or a doc comment that says it panics, like
+// "panics if n < 0". "Bug: panics on empty input" is the opposite, and stays a candidate.
+func panicsByDesign(fn *ast.FuncDecl) bool {
+	for _, prefix := range mustPrefixes {
+		rest, found := strings.CutPrefix(fn.Name.Name, prefix)
+		if found && (rest == "" || startsUpper(rest)) {
+			return true
+		}
+	}
+	if fn.Doc == nil {
+		return false
+	}
+	doc := strings.ToLower(fn.Doc.Text())
+	return strings.Contains(doc, "panic") && !slices.ContainsFunc(bugMarkers, func(marker string) bool {
+		return strings.Contains(doc, marker)
+	})
 }
 
 func isImpureMember(pkgPath, member string) bool {

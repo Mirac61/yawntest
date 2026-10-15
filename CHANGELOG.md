@@ -45,6 +45,15 @@ CLI and its output. Each entry says what to adjust.
 
 ### Fixed
 
+- False positives found by running yawntest on 15 real projects (`docs/real-world.md`):
+  - Funcs returning a func, a channel or an interface other than `error` (middleware,
+    `cobra.MinimumNArgs`) are no pure-func candidates anymore: two closures never compare
+    equal, so the determinism check always failed.
+  - Funcs that panic on bad input by design, named `Must*`/`Require*` or saying so in their
+    doc comment, are no candidates anymore.
+  - Validator tables pass `nil` and `""` only to exported funcs, and only those get the
+    "empty input is rejected" test; an unexported helper's callers have already checked.
+
 - `--format github` gave wrong paths when `GITHUB_WORKSPACE` went through a symlink the
   working directory didn't, like `/var` and `/private/var` on macOS.
 
