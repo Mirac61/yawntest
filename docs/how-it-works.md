@@ -209,6 +209,15 @@ template wraps them with the header, the build constraint and a sorted import bl
    The longest generated name wins: `Server_Create_BadInput` belongs to `Server.Create`.
    Colors only go to a terminal, and `NO_COLOR` turns them off.
 
+## Fuzzing (`run --fuzztime`)
+
+After the seed run, `go test -list '^FuzzYawntest_'` lists each dir's generated fuzz tests.
+Targets with a failed seed are skipped, since fuzzing would only find the same thing. The rest
+run one after another with `go test -run '^$' -fuzz '^FuzzYawntest_X$' -fuzztime D`: go fuzzes
+one target per call and uses every core for it, so running several at once gains nothing. A
+failure becomes a finding named after the saved input (`FuzzYawntest_X/<id>`), so the rerun
+command runs exactly that input.
+
 ## Untested error paths (`check`)
 
 1. `detect` lists the error returns worth a test, in funcs and func literals whose last result
