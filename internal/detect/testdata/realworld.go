@@ -51,3 +51,13 @@ func First(s string) byte { return s[0] }
 
 // Still a candidate: Must is only a prefix at a word boundary.
 func Mustard(n int) int { return n }
+
+type Handler func()
+
+// A named type over a func type is a func type too.
+type Middleware Handler
+
+func Chain(n int) Middleware { return nil }
+
+// Halve panics in debug builds if n is odd: a documented panic, whatever the build.
+func Halve(n int) int { return n / 2 }
