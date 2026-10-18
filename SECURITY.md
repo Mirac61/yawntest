@@ -2,7 +2,9 @@
 
 yawntest runs on your machine and in your CI with your permissions: it reads your code, runs
 `go list` and `go test` on it, and `gen` and `run` write `*_yawntest_test.go` files next to it.
-It sends nothing anywhere. The generated tests run your code, the same way your own tests do.
+yawntest itself sends nothing anywhere. The go tool it runs may download modules that aren't in
+your module cache yet, through your configured `GOPROXY`, as any `go test` does. The generated
+tests run your code, the same way your own tests do.
 
 If you find a way yawntest could be made to do more than that (write outside the scanned
 tree, run something other than the go tool and git, or be tricked by a malicious repository

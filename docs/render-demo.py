@@ -99,4 +99,6 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) < 3 or len(args) % 2 == 0:
         sys.exit("usage: render-demo.py out.svg 'command' output.ansi ['command' output.ansi ...]")
-    open(args[0], 'w').write(main(args[0], list(zip(args[1::2], args[2::2]))))
+    svg = main(args[0], list(zip(args[1::2], args[2::2])))
+    with open(args[0], 'w', encoding='utf-8') as out:
+        out.write(svg)

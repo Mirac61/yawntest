@@ -24,7 +24,9 @@ jobs:
         run: go test ./...
 
       - name: Build
-        run: .github/scripts/build-release.sh "${{ github.ref_name }}"
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: .github/scripts/build-release.sh "$VERSION"
 
       - name: Publish
         env:

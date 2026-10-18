@@ -1,6 +1,7 @@
 name: False positive
 description: yawntest flagged something that's fine, or a generated test fails on correct code.
-labels: ["false positive"]
+title: "False positive: "
+labels: ["bug"]
 body:
   - type: dropdown
     id: kind

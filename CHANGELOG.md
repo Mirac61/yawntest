@@ -8,7 +8,7 @@ CLI and its output. Each entry says what to adjust.
 ### New
 
 - **`install.sh`** installs a release binary, checked against the release's checksums:
-  `curl -sSfL https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh | sh`.
+  `curl -sSfLO https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh && sh install.sh`.
 - `CONTRIBUTING.md`, `SECURITY.md`, issue templates (bug, false positive, feature) and an
   animated demo in the README: `check`, `run` with findings, `run` after the fixes.
 - **`gen --all`, `run --all`** also write tests for code that already has tests. The
