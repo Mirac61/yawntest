@@ -323,3 +323,25 @@ func TestYawntest_isOperator(t *testing.T) {
 		})
 	}
 }
+
+// yawntest: validation / no panic; expected results are up to you
+func TestYawntest_checkTags(t *testing.T) {
+	tests := []struct {
+		name  string
+		input []string
+	}{
+		{name: "one element", input: []string{"yawntest"}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic: %v", r)
+				}
+			}()
+			ok := checkTags(test.input)
+			t.Skipf("TODO(yawntest): expected result for %s; got %v", test.name, ok)
+		})
+	}
+}

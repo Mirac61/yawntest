@@ -117,7 +117,12 @@ func (b *builder) validationInput(param detect.Field, exportedFunc bool) (inputT
 		}
 		return param.Type, cases, true
 	case strings.HasPrefix(param.Type, "[]"):
-		return param.Type, b.sliceCases(param.Type), true
+		cases := b.sliceCases(param.Type)
+		if !exportedFunc {
+			// Like "" for strings: nil and empty behave the same, and the callers checked.
+			cases = slices.DeleteFunc(cases, func(c edgeCase) bool { return c.Name == "nil" || c.Name == "empty" })
+		}
+		return param.Type, cases, true
 	case strings.HasPrefix(param.Type, "..."):
 		return "", nil, false
 	case param.Type != "":
