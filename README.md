@@ -42,7 +42,7 @@ macOS and Windows are on the [releases page](https://github.com/Mirac61/yawntest
 installed with their checksum checked by [`install.sh`](install.sh):
 
 ```bash
-curl -sSfL https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh | sh   # to ~/.local/bin
+curl -sSfLO https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh && sh install.sh   # to ~/.local/bin
 ```
 
 The generated tests still need Go to run.

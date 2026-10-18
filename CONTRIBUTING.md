@@ -53,7 +53,9 @@ that produces broken or failing code fails there.
 ## The demo
 
 `docs/demo.svg` is rendered from real runs on a copy of `_example`; output changes should
-re-render it. `script` keeps the colors, stderr is dropped so the progress line stays out:
+re-render it. `script` keeps the colors, stderr is dropped so the progress line stays out. These
+are the Linux (util-linux) commands; on macOS, `script` takes the command without `-c`:
+`script -q check.ansi sh -c 'yawntest check ./... 2>/dev/null'`.
 
 ```bash
 go install ./cmd/yawntest && cp -r _example /tmp/demo && cd /tmp/demo
