@@ -103,9 +103,16 @@ func TestGenIsIdempotent(t *testing.T) {
 	if got := yawntest(t, example, nil, "gen", "./..."); !strings.Contains(got, "Nothing to do") {
 		t.Errorf("second gen:\n%s\nwant Nothing to do", got)
 	}
-	yawntest(t, example, nil, "gen", "--force", "./...")
+	generated, err := filepath.Glob(filepath.Join(example, "shop", "*_yawntest_test.go"))
+	if err != nil || len(generated) == 0 {
+		t.Fatalf("no generated files: %v", err)
+	}
+	appendFile(t, generated[0], "\n// edited by hand\n")
+	if got := yawntest(t, example, nil, "gen", "--force", "./..."); !strings.HasPrefix(got, "exit 0\n") {
+		t.Errorf("gen --force:\n%s", got)
+	}
 	if after := readYawntestFiles(t, example); after != before {
-		t.Error("gen --force changed the generated files")
+		t.Error("gen --force didn't write the same files again")
 	}
 }
 

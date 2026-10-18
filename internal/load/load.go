@@ -118,7 +118,6 @@ func (l *Loader) list(module, pattern string) error {
 	return nil
 }
 
-// add reads go list's stream of JSON objects and returns how many packages it held.
 func (l *Loader) add(r io.Reader) (int, error) {
 	decoder := json.NewDecoder(r)
 	count := 0
