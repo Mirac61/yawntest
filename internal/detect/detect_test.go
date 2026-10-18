@@ -81,12 +81,16 @@ func detectFixture(t *testing.T, path string) string {
 	return out.String()
 }
 
-// Unsupported types get a "?" so the golden shows what gen can't fill.
+// Unsupported types get a "?" so the golden shows what gen can't fill; types of the package
+// defined as a basic type show it, like Slug=string.
 func formatFields(fields []Field) string {
 	var parts []string
 	for _, field := range fields {
 		part := strings.TrimSpace(field.Name + " " + field.Expr)
-		if field.Type == "" {
+		switch {
+		case field.Underlying != "":
+			part += "=" + field.Underlying // a basic type of the package, gen converts to it
+		case field.Type == "":
 			part += "?"
 		}
 		parts = append(parts, part)
