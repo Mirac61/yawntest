@@ -19,9 +19,8 @@ type Package struct {
 	namedAs           map[string]string // type Middleware Handler: Middleware → Handler
 	files             []*ast.File
 
-	// With type information (SetTypes), calls are resolved to what they really call, in this
-	// package, another package of the program, or the standard library. Without it, or for a
-	// node the type checker couldn't resolve, the rules read the syntax alone.
+	// Set by SetTypes. Without it, or for a node the type checker couldn't resolve, the rules read
+	// the syntax alone.
 	path    string
 	info    *types.Info
 	program *Program
@@ -126,7 +125,6 @@ func (p *Package) addConsts(decl *ast.GenDecl) {
 	}
 }
 
-// addBasics records the package's types defined as a basic type: type Slug string.
 func (p *Package) addBasics(decl *ast.GenDecl) {
 	if decl.Tok != token.TYPE {
 		return
@@ -208,7 +206,6 @@ func (p *Package) withUnderlying(fields []Field) []Field {
 	return fields
 }
 
-// hasSideEffects reports whether fn, or a func or method of this package it calls, does I/O.
 func (p *Package) hasSideEffects(fn *ast.FuncDecl, imports importTable) bool {
 	for _, info := range p.funcs[funcName(fn)] {
 		if info.decl == fn {
@@ -280,8 +277,7 @@ func (p *Package) bodyImpure(fn *ast.FuncDecl, imports importTable) bool {
 	})
 }
 
-// typedImpure judges a call or reference by what the type checker resolved it to. resolved is
-// false when there is no type information for the node.
+// resolved is false when there is no type information for the node.
 func (p *Package) typedImpure(node ast.Node) (impure, resolved bool) {
 	var expr ast.Expr
 	switch node := node.(type) {
@@ -306,7 +302,6 @@ func (p *Package) typedImpure(node ast.Node) (impure, resolved bool) {
 	}
 }
 
-// objectOf is what an identifier or selector refers to, or nil without type information.
 func (p *Package) objectOf(expr ast.Expr) types.Object {
 	if p.info == nil {
 		return nil
