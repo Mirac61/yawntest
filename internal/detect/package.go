@@ -3,6 +3,8 @@ package detect
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
+	"strings"
 )
 
 // Package is what detection knows about the other files of a directory: its funcs, methods,
@@ -12,6 +14,45 @@ type Package struct {
 	funcs  map[string][]*funcInfo // "Name" or "Type.Name"; several for build-constrained variants
 	consts map[string][]string    // type name → typed consts, in source order
 	files  []*ast.File
+
+	// With type information (SetTypes), calls are resolved to what they really call, in this
+	// package, another package of the program, or the standard library. Without it, or for a
+	// node the type checker couldn't resolve, the rules read the syntax alone.
+	path    string
+	info    *types.Info
+	program *Program
+}
+
+// Program links the packages of one scan by import path, so purity follows calls between them.
+// load, if set, brings in a package of the module that the scan didn't cover, on first use.
+type Program struct {
+	byPath map[string]*Package
+	load   func(path string) *Package
+	tried  map[string]bool
+}
+
+func NewProgram(load func(path string) *Package) *Program {
+	return &Program{byPath: map[string]*Package{}, load: load, tried: map[string]bool{}}
+}
+
+func (p *Program) lookup(path string) *Package {
+	if pkg, ok := p.byPath[path]; ok || p.load == nil || p.tried[path] {
+		return pkg
+	}
+	p.tried[path] = true
+	pkg := p.load(path)
+	if _, ok := p.byPath[path]; !ok && pkg != nil {
+		// SetTypes didn't add it: the package didn't type-check. Keep the syntax-only package,
+		// so every caller gets the same answer.
+		p.byPath[path] = pkg
+	}
+	return pkg
+}
+
+// SetTypes gives the package its import path and type information, and adds it to program.
+func (p *Package) SetTypes(path string, info *types.Info, program *Program) {
+	p.path, p.info, p.program = path, info, program
+	program.byPath[path] = p
 }
 
 type purity int
@@ -120,13 +161,16 @@ func (p *Package) impure(info *funcInfo) bool {
 	return false
 }
 
-// ponytail: calls into other packages of the module aren't followed; needs go/types.
+// Without type information, calls into other packages of the module aren't followed.
 func (p *Package) bodyImpure(fn *ast.FuncDecl, imports importTable) bool {
 	if fn.Body == nil {
 		return false // assembly, e.g. math kernels
 	}
 	receiverName, receiverType := receiverOf(fn)
 	return containsNode(fn.Body, func(node ast.Node) bool {
+		if impure, resolved := p.typedImpure(node); resolved {
+			return impure
+		}
 		switch node := node.(type) {
 		case *ast.GoStmt:
 			return true
@@ -144,6 +188,114 @@ func (p *Package) bodyImpure(fn *ast.FuncDecl, imports importTable) bool {
 		}
 		return false
 	})
+}
+
+// typedImpure judges a call or reference by what the type checker resolved it to. resolved is
+// false when there is no type information for the node.
+func (p *Package) typedImpure(node ast.Node) (impure, resolved bool) {
+	var expr ast.Expr
+	switch node := node.(type) {
+	case *ast.CallExpr:
+		expr = node.Fun
+	case *ast.SelectorExpr:
+		expr = node
+	default:
+		return false, false
+	}
+	switch object := p.objectOf(expr).(type) {
+	case *types.Func:
+		return p.funcImpure(object), true
+	case *types.Var:
+		// os.Stdout and friends; a local variable or a field is no I/O by itself.
+		pkg := object.Pkg()
+		return pkg != nil && object.Parent() == pkg.Scope() && ioPackages[pkg.Path()], true
+	case nil:
+		return false, false
+	default:
+		return false, true // types, consts, builtins
+	}
+}
+
+// objectOf is what an identifier or selector refers to, or nil without type information.
+func (p *Package) objectOf(expr ast.Expr) types.Object {
+	if p.info == nil {
+		return nil
+	}
+	switch expr := ast.Unparen(expr).(type) {
+	case *ast.Ident:
+		return p.info.Uses[expr]
+	case *ast.SelectorExpr:
+		if selection, ok := p.info.Selections[expr]; ok {
+			return selection.Obj()
+		}
+		return p.info.Uses[expr.Sel]
+	}
+	return nil
+}
+
+func (p *Package) funcImpure(fn *types.Func) bool {
+	pkg := fn.Pkg()
+	if pkg == nil {
+		return false // error.Error and other universe methods
+	}
+	path := pkg.Path()
+	if abstractMethod(fn) {
+		// Some implementation decides; for io.Writer or a Repository of the module that's I/O.
+		return ioPackages[path] || !isStandard(path)
+	}
+	if target := p.packageAt(path); target != nil {
+		return target.calledImpure(funcKey(fn))
+	}
+	if !isStandard(path) {
+		return false // a dependency yawntest can't see into, as without type information
+	}
+	if isMethod(fn) {
+		// time.Time.After is a comparison, not the timer time.After.
+		return ioPackages[path] || impureMembers[path][fn.Name()]
+	}
+	return isImpureMember(path, fn.Name())
+}
+
+func (p *Package) packageAt(path string) *Package {
+	if path == p.path {
+		return p
+	}
+	if p.program != nil {
+		return p.program.lookup(path)
+	}
+	return nil
+}
+
+// funcKey is the name funcs are indexed by: Name, or Type.Name for methods.
+func funcKey(fn *types.Func) string {
+	signature, ok := fn.Type().(*types.Signature)
+	if !ok || signature.Recv() == nil {
+		return fn.Name()
+	}
+	recv := signature.Recv().Type()
+	if pointer, ok := recv.(*types.Pointer); ok {
+		recv = pointer.Elem()
+	}
+	if named, ok := recv.(*types.Named); ok {
+		return named.Obj().Name() + "." + fn.Name()
+	}
+	return fn.Name()
+}
+
+func isMethod(fn *types.Func) bool {
+	signature, ok := fn.Type().(*types.Signature)
+	return ok && signature.Recv() != nil
+}
+
+func abstractMethod(fn *types.Func) bool {
+	signature, ok := fn.Type().(*types.Signature)
+	return ok && signature.Recv() != nil && types.IsInterface(signature.Recv().Type())
+}
+
+// isStandard: standard library import paths have no dot in their first element.
+func isStandard(path string) bool {
+	first, _, _ := strings.Cut(path, "/")
+	return !strings.Contains(first, ".")
 }
 
 // calledImpure is false for names that aren't package funcs: builtins, closures, fields.

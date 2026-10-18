@@ -344,11 +344,13 @@ Empty ones are left out.
 
 ## Limits
 
-yawntest reads syntax only, it never type-checks. That keeps it fast and dependency-free, and
-it's why some things slip through:
+yawntest type-checks your code with the standard library alone (`go list -export` plus
+`go/types`), so a call is judged by what it really calls, also in other packages of your
+module. `--static` skips that and reads syntax only, which is faster. Where a package doesn't
+build, yawntest falls back to syntax for it. Some things still slip through:
 
-- I/O hidden behind a call into another package of your module isn't seen, so such a func
-  can still be treated as pure. Calls within the same package are followed.
+- I/O in a dependency outside your module, or behind an interface, is judged by the package
+  it comes from, not by what the implementation does.
 - Slices are fuzzed with one element. Nil and empty slices are only covered in validator tables.
 - Pointers, maps and nested structs stay at their zero value in JSON round trips.
 - "Tested" means a test file mentions the name or the package's tests run the func. Structs
