@@ -1,6 +1,7 @@
 # CodeRabbit skips dirs named gen by default, taking them for generated code. Here internal/gen
-# is the generator itself.
+# is the generator itself. Naming the default pattern lifts it; any other pattern here would turn
+# the list into the only paths reviewed.
 reviews:
   profile: chill
   path_filters:
-    - "internal/gen/**"
+    - "**/gen/**"
