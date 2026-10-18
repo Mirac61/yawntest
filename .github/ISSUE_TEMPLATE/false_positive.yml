@@ -1,0 +1,43 @@
+name: False positive
+description: yawntest flagged something that's fine, or a generated test fails on correct code.
+title: "False positive: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What was wrong
+      options:
+        - A candidate that can't or shouldn't be tested this way
+        - A hint about code that is fine
+        - An error path no unit test can reach
+        - A finding on correct code
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: The code
+      description: The smallest snippet that shows it, ideally a whole file that compiles.
+      render: go
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: yawntest's output
+      description: The lines about this code, and the command you ran.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it's fine
+      description: What the code is meant to do, and why the rule doesn't apply.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `yawntest --version`.
+      placeholder: v0.3.0
