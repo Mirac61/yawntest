@@ -3,6 +3,15 @@
 yawntest follows [SemVer](https://semver.org) and is pre-1.0, so a minor version can change the
 CLI and its output. Each entry says what to adjust.
 
+## Unreleased
+
+### Fixed
+
+- **A func that writes a package-level var is no longer pure.** `google/uuid`'s `SetNodeID`
+  copies into a package var; its generated fuzz test changed the node ID for every other
+  test of the package. Such funcs are no candidates for pure-func, validation or roundtrip
+  anymore, so `check` may list fewer candidates than before.
+
 ## v0.4.0
 
 ### New

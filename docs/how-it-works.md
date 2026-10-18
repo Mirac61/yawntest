@@ -75,8 +75,10 @@ in the order http-handler → validation → pure-func, and the first hit wins. 
 enum-roundtrip are checked on top, since they test a property of two declarations.
 
 **Purity** is decided once per func and cached: a body is impure if it starts a goroutine,
-touches an I/O package, or calls a func of the same package (or a method on its own receiver)
-that is impure. Recursion counts as pure while it's being decided. Calls into other packages of
+touches an I/O package, writes a package-level var (`x = v`, `x++`, `x[k] = v`, `copy(x[:], v)`,
+of its own package or an imported one), or calls a func of the same package (or a method on its
+own receiver) that is impure. A local or param with a package var's name doesn't count; calls
+on a package var, like a mutex's `Lock`, don't either. Recursion counts as pure while it's being decided. Calls into other packages of
 the module are followed with type information (see [Types](#types)), not with `--static`.
 
 Functions without a body and methods on generic types (`Box[T]`) are skipped, since a test

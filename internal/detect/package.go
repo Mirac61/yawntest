@@ -14,6 +14,7 @@ type Package struct {
 	funcs  map[string][]*funcInfo // "Name" or "Type.Name"; several for build-constrained variants
 	consts map[string][]string    // type name → typed consts, in source order
 	basics map[string]string      // type name → basic type, for `type Slug string`
+	vars   map[string]bool        // package-level vars
 
 	uncomparableTypes map[string]bool   // type name → defined as a func, chan or interface
 	namedAs           map[string]string // type Middleware Handler: Middleware → Handler
@@ -77,7 +78,7 @@ type funcInfo struct {
 // funcs don't become candidates, but a generated helper doing I/O still makes its callers impure.
 func NewPackage(files []*ast.File) *Package {
 	pkg := &Package{
-		funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, basics: map[string]string{},
+		funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, basics: map[string]string{}, vars: map[string]bool{},
 		uncomparableTypes: map[string]bool{}, namedAs: map[string]string{}, files: files,
 	}
 	for _, file := range files {
@@ -90,6 +91,7 @@ func NewPackage(files []*ast.File) *Package {
 			case *ast.GenDecl:
 				pkg.addConsts(decl)
 				pkg.addBasics(decl)
+				pkg.addVars(decl)
 			}
 		}
 	}
@@ -254,7 +256,11 @@ func (p *Package) bodyImpure(fn *ast.FuncDecl, imports importTable) bool {
 		return false // assembly, e.g. math kernels
 	}
 	receiverName, receiverType := receiverOf(fn)
+	locals := localNames(fn)
 	return containsNode(fn.Body, func(node ast.Node) bool {
+		if p.writesPackageState(node, locals, imports) {
+			return true
+		}
 		if impure, resolved := p.typedImpure(node); resolved {
 			return impure
 		}
