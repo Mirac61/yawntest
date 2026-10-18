@@ -5,12 +5,19 @@
 **Writes the boring tests for your Go code.** Offline, deterministic, no AI, standard library
 only.
 
-![yawntest run on the example package: seven tests written, four findings with file and line](docs/demo.svg)
+![yawntest check lists what's untested, yawntest run writes seven tests and finds four bugs, and after the fixes run says all generated tests pass](docs/demo.svg)
 
-That's a real run on [`_example/`](_example/), a small shop package with four planted bugs:
-a handler that answers bad input with a 500, a split that loses cents, a panic on empty
-input, and an order status the parser forgot. All four are found, each pointing at the line
-to fix and with the `go test` command that reruns just that case.
+That's a real session on [`_example/`](_example/), a small shop package with four planted
+bugs: a handler that answers bad input with a 500, a split that loses cents, a panic on empty
+input, and an order status the parser forgot. `check` lists what has no test, `run` writes the
+tests and finds all four, each pointing at the line to fix and with the `go test` command that
+reruns just that case. After the fixes, the same tests pass and stay as regression tests.
+
+```bash
+yawntest check ./...   # what's untested, nothing written
+yawntest run ./...     # write the tests, run them, report what fails
+git add '*_yawntest_test.go'
+```
 
 yawntest reads your source, recognizes common shapes (HTTP handlers, JSON structs, pure
 functions, validators, encode/decode pairs, enums) and generates tests for them. It never
@@ -20,6 +27,10 @@ input gives the same output, `Parse(Format(x))` gives `x` back, every enum value
 from its `String()`, split amounts add up to the total. When a generated test fails on your current code, that's a
 **finding**, a likely bug.
 
+On 15 well-known Go projects (cobra, gin, echo, uuid, …) the generated tests fail in 4 places,
+all real bugs on edge inputs. The first run there had 16 false positives; how each one was
+triaged and fixed is in [real-world runs](docs/real-world.md).
+
 ## Install
 
 ```bash
@@ -27,7 +38,14 @@ go install github.com/Mirac61/yawntest/cmd/yawntest@latest
 ```
 
 Needs Go 1.23 or newer, and `git` for `--changed` and `--since`. Prebuilt binaries for Linux,
-macOS and Windows are on the [releases page](https://github.com/Mirac61/yawntest/releases).
+macOS and Windows are on the [releases page](https://github.com/Mirac61/yawntest/releases), or
+installed with their checksum checked by [`install.sh`](install.sh):
+
+```bash
+curl -sSfLO https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh && sh install.sh   # to ~/.local/bin
+```
+
+The generated tests still need Go to run.
 For GitHub Actions there's an action, see [In CI](#in-ci).
 
 ### Versioning
@@ -367,6 +385,7 @@ build, yawntest falls back to syntax for it. Some things still slip through:
 - [How it works](docs/how-it-works.md): architecture, every detection rule, design decisions
 - [Real-world runs](docs/real-world.md): what yawntest finds on 15 well-known Go projects, every finding sorted into bug or false positive
 - [Changelog](CHANGELOG.md): what changed between versions
+- [Contributing](CONTRIBUTING.md): setup, golden files, adding a rule. False positives are the most useful bug reports
 
 Try it on the example yourself, from a clone of this repo:
 
