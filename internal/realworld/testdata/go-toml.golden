@@ -1,0 +1,5 @@
+pelletier/go-toml at 686c980c4758
+
+check: 0 candidates, 1 hints (dates 1), 134 error paths, 1 packages without tests
+  hint cmd/tomltestgen/main.go:105 dates: time.Now().Format() depends on the server's time zone; call .UTC() or .In(loc) first
+run --all: 6 tests in 1 files, 0 skipped, 0 findings, 0 need setup

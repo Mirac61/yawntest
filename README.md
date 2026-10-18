@@ -58,6 +58,7 @@ yawntest <command> [flags] [path]     # path defaults to ".", "./..." works too
 | `--json` | all | Short for `--format json` |
 | `--static` | `check`, `gen` | Run no tests. Faster, but no error paths, and only names count as tested |
 | `--force` | `gen`, `run` | Overwrite existing yawntest files |
+| `--all` | `gen`, `run` | Also write tests for code that already has tests |
 | `--fuzztime <d>` | `run` | After the seeds, fuzz each generated fuzz test for `d` (e.g. `10s`) with Go's fuzzing engine |
 | `--config <file>` | all | Use this config instead of the `.yawntest.json` found automatically, see [Configuration](#configuration) |
 
@@ -364,7 +365,7 @@ build, yawntest falls back to syntax for it. Some things still slip through:
 ## More
 
 - [How it works](docs/how-it-works.md): architecture, every detection rule, design decisions
-- [Real-world runs](docs/real-world.md): what yawntest found on real projects
+- [Real-world runs](docs/real-world.md): what yawntest finds on 15 well-known Go projects, every finding sorted into bug or false positive
 - [Changelog](CHANGELOG.md): what changed between versions
 
 Try it on the example yourself, from a clone of this repo:

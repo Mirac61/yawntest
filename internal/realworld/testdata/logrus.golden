@@ -1,0 +1,4 @@
+sirupsen/logrus at 6ef0748d1177
+
+check: 0 candidates, 0 hints, 2 error paths, 0 packages without tests
+run --all: 7 tests in 5 files, 0 skipped, 0 findings, 0 need setup

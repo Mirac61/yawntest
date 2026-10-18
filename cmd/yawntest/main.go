@@ -36,6 +36,7 @@ type options struct {
 	sarifFile string        // --sarif: also write SARIF here
 	config    string        // --config: the .yawntest.json to use instead of searching for one
 	fuzztime  time.Duration // run --fuzztime: how long to fuzz each generated fuzz test
+	all       bool          // gen, run --all: also generate for code that has tests
 	json      bool          // --json, folded into format by parseArgs
 }
 
@@ -237,10 +238,13 @@ func check(opts options, tree scan.Tree, changed map[string]changes.File, covera
 // Without --force existing yawntest files count as tests, so only sources with new candidates show up.
 func generate(opts options, tree scan.Tree, changed map[string]changes.File, coverage *run.Coverage) []report.GeneratedFile {
 	files := tree.Untested(!opts.force)
+	if opts.all {
+		files = tree.Files // tested or not: the invariants hold for code with tests too
+	}
 	if changed != nil {
 		files = must(changes.KeepChangedFiles(files, changed))
 	}
-	if !opts.static {
+	if !opts.static && !opts.all {
 		files = run.WithoutCovered(files, coverage, true)
 	}
 
