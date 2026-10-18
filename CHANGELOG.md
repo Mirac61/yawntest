@@ -51,7 +51,7 @@ CLI and its output. Each entry says what to adjust.
     equal, so the determinism check always failed.
   - Funcs that panic on bad input by design, named `Must*`/`Require*` or saying so in their
     doc comment, are no candidates anymore.
-  - Validator tables pass `nil` and `""` only to exported funcs, and only those get the
+  - Validator tables pass `nil`, `""` and empty slices only to exported funcs, and only those get the
     "empty input is rejected" test; an unexported helper's callers have already checked.
 
 - `--format github` gave wrong paths when `GITHUB_WORKSPACE` went through a symlink the
