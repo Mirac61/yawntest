@@ -41,7 +41,13 @@ func (p *Program) lookup(path string) *Package {
 		return pkg
 	}
 	p.tried[path] = true
-	return p.load(path) // SetTypes adds it
+	pkg := p.load(path)
+	if _, ok := p.byPath[path]; !ok && pkg != nil {
+		// SetTypes didn't add it: the package didn't type-check. Keep the syntax-only package,
+		// so every caller gets the same answer.
+		p.byPath[path] = pkg
+	}
+	return pkg
 }
 
 // SetTypes gives the package its import path and type information, and adds it to program.

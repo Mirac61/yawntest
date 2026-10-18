@@ -77,7 +77,7 @@ enum-roundtrip are checked on top, since they test a property of two declaration
 **Purity** is decided once per func and cached: a body is impure if it starts a goroutine,
 touches an I/O package, or calls a func of the same package (or a method on its own receiver)
 that is impure. Recursion counts as pure while it's being decided. Calls into other packages of
-the module aren't followed.
+the module are followed with type information (see [Types](#types)), not with `--static`.
 
 Functions without a body and methods on generic types (`Box[T]`) are skipped, since a test
 can't call them.
