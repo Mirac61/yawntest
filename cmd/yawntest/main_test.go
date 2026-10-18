@@ -53,6 +53,7 @@ func TestEndToEnd(t *testing.T) {
 		{name: "check_static", args: []string{"check", "--static", "./..."}},
 		{name: "check_sarif", args: []string{"check", "--format", "sarif", "./..."}, env: []string{"GITHUB_WORKSPACE=$WORK"}},
 		{name: "gen", args: []string{"gen", "./..."}},
+		{name: "gen_all", args: []string{"gen", "--all", "./..."}}, // ParseQuantity has a test, --all writes one anyway
 		{name: "run", args: []string{"run", "./..."}},
 		{name: "usage_error", args: []string{"check", "a", "b"}},
 	}
