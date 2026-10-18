@@ -9,7 +9,11 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
+	"time"
 )
+
+// yawntestTimeout is how long the generated tests of one package may take together.
+const yawntestTimeout = 2 * time.Minute
 
 // ZeroReceiverNote ends the panic message gen writes for methods. A failure carrying it most
 // likely means the receiver lacks dependencies, not that the code has a bug.
@@ -45,7 +49,8 @@ func YawntestTests(dirs []string, progress Progress) ([]Finding, error) {
 }
 
 func yawntestTestsIn(dir string) ([]Finding, error) {
-	cmd := exec.Command("go", "test", "-json", "-run", yawntestTests, ".")
+	// Generated tests run in milliseconds; one still going after the timeout hangs on its input.
+	cmd := exec.Command("go", "test", "-json", "-timeout", yawntestTimeout.String(), "-run", yawntestTests, ".")
 	cmd.Dir = dir
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -80,6 +85,8 @@ type testEvent struct {
 func parseTestEvents(r io.Reader) ([]Finding, error) {
 	outputByTest := map[string][]string{}
 	var failed []string
+	var started []string
+	finished := map[string]bool{}
 	var buildOutput strings.Builder
 	buildFailed := false
 
@@ -101,10 +108,28 @@ func parseTestEvents(r io.Reader) ([]Finding, error) {
 			buildFailed = true
 		case event.Test == "":
 			continue
+		case event.Action == "run":
+			started = append(started, event.Test)
 		case event.Action == "output":
 			outputByTest[event.Test] = append(outputByTest[event.Test], event.Output)
 		case event.Action == "fail":
 			failed = append(failed, event.Test)
+			finished[event.Test] = true
+		case event.Action == "pass" || event.Action == "skip":
+			finished[event.Test] = true
+		}
+	}
+
+	// A test that started and never finished was cut off: by the timeout, or by a panic in a
+	// goroutine of its own, which no recover in the test reaches. go test reports only the
+	// package as failed then, so the test itself becomes the finding.
+	for _, test := range started {
+		if finished[test] || hasUnfinishedSubtest(test, started, finished) {
+			continue
+		}
+		failed = append(failed, test)
+		if after, ok := timedOut(outputByTest[test]); ok {
+			outputByTest[test] = []string{"still running after " + after + ": this input makes it hang or take very long"}
 		}
 	}
 
@@ -125,6 +150,22 @@ func parseTestEvents(r io.Reader) ([]Finding, error) {
 		})
 	}
 	return findings, nil
+}
+
+func hasUnfinishedSubtest(test string, started []string, finished map[string]bool) bool {
+	return slices.ContainsFunc(started, func(other string) bool {
+		return strings.HasPrefix(other, test+"/") && !finished[other]
+	})
+}
+
+// timedOut finds go test's "panic: test timed out after 2m0s" and returns the duration.
+func timedOut(output []string) (string, bool) {
+	for _, line := range output {
+		if after, ok := strings.CutPrefix(strings.TrimSpace(line), "panic: test timed out after "); ok {
+			return after, true
+		}
+	}
+	return "", false
 }
 
 // A parent test fails with its subtests; only the subtest says what went wrong.

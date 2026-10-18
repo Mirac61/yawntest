@@ -35,12 +35,14 @@ go test -tags realworld ./internal/realworld -update    # rewrite the summaries
 | go-playground/validator | 0 | 0 | 3 | 1 | 1 | 0 |
 
 Findings count failed test funcs, not cases. Every run took seconds, except decimal: one
-generated test hangs there and only go's 10-minute test timeout ended it.
+generated test hangs there. The generated tests get 2 minutes; before that limit, only go's
+10-minute test timeout ended it, and the run said "go test failed" without naming the test.
 
 ### Triage
 
-**19 findings: 3 real, 16 false positives.** That's far above the 10 % aimed for, and the
-false positives fall into a handful of causes, each with its own fix.
+**19 findings, plus a hang the table doesn't count: 4 real, 16 false positives.** That's far
+above the 10 % aimed for, and the false positives fall into a handful of causes, each with its
+own fix.
 
 | Finding | Verdict | Why |
 |---|---|---|
@@ -54,7 +56,7 @@ false positives fall into a handful of causes, each with its own fix.
 | validator `asBool("")` | false positive | Its doc says it panics if it can't convert. |
 | echo `isValidJSONPCallback("")` | false positive | The empty callback is valid on purpose, the doc says so. The validation rule expected empty input to be rejected. |
 | gjson `isDotPiperChar("")` | false positive | An unexported helper whose every caller checks there's a next byte; `""` never reaches it. |
-| decimal (hang) | false positive | `NewFromFloatWithExponent` with an exponent of `math.MaxInt32` loops for minutes. Nothing reported it as a finding, the run just took 10 minutes. |
+| decimal `NewFromFloatWithExponent(-1, math.MaxInt32)` | **real, extreme input** | Computes 5^2147483647 with `big.Int`, which runs for longer than anyone waits. The doc doesn't limit the exponent. Shown as "still running after 2m0s"; before the time limit it went unnoticed. |
 
 ### After the fixes
 
@@ -64,10 +66,10 @@ false positives fall into a handful of causes, each with its own fix.
 | A documented panic, `Must*`, `Require*` | 5 | Not a candidate of any pattern |
 | An unexported helper given `""` | 2 | Unexported validators get no `nil`, no `""` and no "empty is rejected" test |
 
-With these, the corpus has **3 findings, all real** (go-humanize). decimal's hang is still
-there and now shows up as `go test failed`, since nothing else in that package fails anymore.
+With these, the corpus has **4 findings, all real**: the three in go-humanize and decimal's
+hang.
 
-The 4 hints:
+The 5 hints, 3 of them real:
 
 | Hint | Verdict | Why |
 |---|---|---|
@@ -78,8 +80,8 @@ The 4 hints:
 Warnings, not findings:
 
 - cobra's own tests fail when run as root (`TestFailGenFishCompletionFile` expects a write to
-  fail), so its error paths are skipped. The warning shows the last line of the test output,
-  which doesn't say why.
+  fail), so its error paths are skipped. The warning names the test and its panic: `tests
+  crash in TestFailGenFishCompletionFile: … nil pointer dereference`.
 - cli's `docs` is a nested module whose `go.mod` needs updating, so it's checked without type
   information.
 
