@@ -1,8 +1,8 @@
 #!/bin/sh
 # Builds the release archives and checksums.txt into dist/, the way install.sh expects them.
 #
-#   .github/scripts/build-release.sh v0.4.0                 # every platform
-#   .github/scripts/build-release.sh v0.4.0 linux/amd64     # just these
+#   .github/scripts/build-release.sh v0.5.0                 # every platform
+#   .github/scripts/build-release.sh v0.5.0 linux/amd64     # just these
 set -eu
 
 version=$1

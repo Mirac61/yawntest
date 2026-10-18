@@ -53,7 +53,7 @@ For GitHub Actions there's an action, see [In CI](#in-ci).
 yawntest follows [SemVer](https://semver.org) and is pre-1.0: between `0.x` minor versions the
 CLI and its output can change. That covers commands and flags, exit codes, the JSON shape and the
 names of generated files. New checks can also add findings to code that was clean before. If
-you gate CI on yawntest, pin a version (`@v0.4.0`). `yawntest --version` prints the one you have.
+you gate CI on yawntest, pin a version (`@v0.5.0`). `yawntest --version` prints the one you have.
 
 ## Usage
 
@@ -287,7 +287,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - uses: Mirac61/yawntest@v0.4.0
+      - uses: Mirac61/yawntest@v0.5.0
         with:
           command: check     # or run, to also execute the generated tests
           only-changed: true # only what the pull request changes
@@ -311,7 +311,7 @@ The step fails with the exit code, so it gates the merge. Use `continue-on-error
 annotate. Without the action, any CI runs the same thing:
 
 ```bash
-go install github.com/Mirac61/yawntest/cmd/yawntest@v0.4.0
+go install github.com/Mirac61/yawntest/cmd/yawntest@v0.5.0
 yawntest check --since origin/main ./...
 ```
 
