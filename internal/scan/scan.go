@@ -114,7 +114,6 @@ func Scan(root string, options Options) (Tree, error) {
 	return tree, nil
 }
 
-// byDir groups paths by directory, dirs in order of their first file.
 func byDir(paths []string) [][]string {
 	var groups [][]string
 	index := map[string]int{}
@@ -173,7 +172,6 @@ type parsedDir struct {
 	pkg          *detect.Package
 }
 
-// parseDir parses one directory as a package, so detection sees helpers and consts across files.
 func (t *Tree) parseDir(fset *token.FileSet, paths []string) (*parsedDir, error) {
 	dir := &parsedDir{}
 	for _, path := range paths {
