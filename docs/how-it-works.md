@@ -24,6 +24,7 @@ doesn't parse or a package whose tests don't build becomes a warning, and the re
 | `internal/scan` | Walk a tree, parse each directory as a package, drop what's already tested, list dirs | `scan.go`, `constraint.go` |
 | `internal/gen` | Turn matches into a gofmt'ed test file | `gen.go`, one file per pattern, `seeds.go` for edge values |
 | `internal/run` | Run `go test` and turn its output into findings and error paths. Coverage runs are cached and run in parallel | `tests.go`, `coverage.go` |
+| `internal/config` | `.yawntest.json`: finding it, `exclude` globs with `**`, `disable` | `config.go` |
 | `internal/changes` | Lines changed since `HEAD` or a merge base, and filters for scan results | `changes.go` |
 | `internal/report` | Text, JSON and GitHub output, the exit-code decision | `text.go` (sections and layout), one file per section, `summary.go`, `result.go`, `json.go`, `github.go` |
 
@@ -53,6 +54,10 @@ Dashed arrows are imports. The diagrams are PlantUML; sources and the render com
   router, whose names never appear in a test. `gen` skips yawntest's own tests with
   `-skip '^(Test|Fuzz)Yawntest_'` so `--force` still rewrites their files; `check` counts them
   and shares the run with the error paths. If the tests don't build, the names decide alone.
+- `.yawntest.json` (package `internal/config`) is looked for in the path and the dirs above it,
+  up to the first one with `go.mod` or `.git`. `exclude` is applied while walking, so an
+  excluded dir is never parsed; `disable` filters the scanned files before anything else, and
+  `error-paths` there also saves the coverage runs.
 - `//yawntest:ignore` drops matches, hints and error returns: in a doc comment for the whole
   declaration, elsewhere for its own line and the next.
 - When generating without `--force`, existing yawntest files count as tests, so a second run

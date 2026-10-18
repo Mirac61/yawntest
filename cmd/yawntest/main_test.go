@@ -82,6 +82,17 @@ func TestSARIFFile(t *testing.T) {
 	}
 }
 
+// .yawntest.json leaves out a file and turns off a pattern and a hint; a typo in it is exit 2.
+func TestConfig(t *testing.T) {
+	work, example := copyExample(t)
+	config := filepath.Join(example, ".yawntest.json")
+	writeFile(t, config, `{"exclude": ["shop/user.go"], "disable": ["pattern:enum-roundtrip", "hint:money"]}`)
+	checkGolden(t, "check_config", work, yawntest(t, example, nil, "check", "--static", "./..."))
+
+	writeFile(t, config, `{"disable": ["hint:mony"]}`)
+	checkGolden(t, "check_config_error", work, yawntest(t, example, nil, "check", "./..."))
+}
+
 // A second gen without --force writes nothing, and --force writes the same bytes again.
 func TestGenIsIdempotent(t *testing.T) {
 	_, example := copyExample(t)
@@ -165,6 +176,10 @@ func yawntest(t *testing.T, dir string, env []string, args ...string) string {
 
 func checkGolden(t *testing.T, name, work, got string) {
 	t.Helper()
+	// On macOS the binary may see the temp dir as /private/var/… where the test has /var/….
+	if resolved, err := filepath.EvalSymlinks(work); err == nil {
+		got = strings.ReplaceAll(got, resolved, "$WORK")
+	}
 	got = strings.ReplaceAll(got, work, "$WORK")
 	golden := filepath.Join("testdata", name+".golden")
 	if *update {
@@ -196,6 +211,13 @@ func readYawntestFiles(t *testing.T, dir string) string {
 		all.Write(data)
 	}
 	return all.String()
+}
+
+func writeFile(t *testing.T, path, text string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func appendFile(t *testing.T, path, text string) {

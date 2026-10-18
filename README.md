@@ -58,6 +58,7 @@ yawntest <command> [flags] [path]     # path defaults to ".", "./..." works too
 | `--json` | all | Short for `--format json` |
 | `--static` | `check`, `gen` | Run no tests. Faster, but no error paths, and only names count as tested |
 | `--force` | `gen`, `run` | Overwrite existing yawntest files |
+| `--config <file>` | all | Use this config instead of the `.yawntest.json` found automatically, see [Configuration](#configuration) |
 
 Flags can go before or after the path.
 
@@ -229,6 +230,26 @@ if err != nil {
 	return fmt.Errorf("render: %w", err) //yawntest:ignore can't happen, the template is static
 }
 ```
+
+## Configuration
+
+For whole files, directories or checks, a `.yawntest.json` next to `go.mod` (or anywhere
+between the path you check and the module root) beats sprinkling `//yawntest:ignore`:
+
+```json
+{
+  "exclude": ["internal/legacy", "**/*_mock.go", "gen/*.go"],
+  "disable": ["hint:money", "pattern:validation", "error-paths"]
+}
+```
+
+- `exclude`: paths relative to the file. `*` matches within one directory, `**` any number of
+  them, and a directory leaves out everything below it.
+- `disable`: `error-paths`, `pattern:<name>` for any pattern in the table above, or
+  `hint:money`, `hint:dates`, `hint:auth`.
+
+Unknown keys and values are an error (exit 2) that lists the valid ones, so a typo doesn't
+silently turn nothing off.
 
 ## In CI
 

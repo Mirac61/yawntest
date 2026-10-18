@@ -10,6 +10,7 @@ import (
 	"slices"
 
 	"github.com/Mirac61/yawntest/internal/changes"
+	"github.com/Mirac61/yawntest/internal/config"
 	"github.com/Mirac61/yawntest/internal/gen"
 	"github.com/Mirac61/yawntest/internal/report"
 	"github.com/Mirac61/yawntest/internal/run"
@@ -30,6 +31,7 @@ type options struct {
 	static    bool   // run no tests
 	format    string // text, json, github or sarif
 	sarifFile string // --sarif: also write SARIF here
+	config    string // --config: the .yawntest.json to use instead of searching for one
 	json      bool   // --json, folded into format by parseArgs
 }
 
@@ -97,7 +99,9 @@ func main() {
 }
 
 func collect(opts options) report.Result {
-	tree := must(scan.Scan(opts.root))
+	cfg := must(config.Load(opts.config, opts.root))
+	tree := must(scan.Scan(opts.root, cfg.Excluded))
+	tree.Files = cfg.Apply(tree.Files)
 	result := report.Result{}
 	for _, broken := range tree.Broken {
 		result.Warnings = append(result.Warnings, fmt.Sprintf("skipped %s, it doesn't parse: %v", broken.Path, broken.Err))
@@ -117,7 +121,7 @@ func collect(opts options) report.Result {
 
 	result.Generated = generate(opts, tree, changed, coverage)
 	if opts.command == "run" {
-		dirs := must(scan.Dirs(opts.root, scan.IsYawntestFile))
+		dirs := slices.DeleteFunc(must(scan.Dirs(opts.root, scan.IsYawntestFile)), cfg.Excluded)
 		result.Findings = must(run.YawntestTests(dirs, statusLine("running the generated tests")))
 	}
 	return result
