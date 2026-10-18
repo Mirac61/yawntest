@@ -192,16 +192,34 @@ func coverProfile(dir string, testArgs ...string) ([]coverBlock, error) {
 	data, err := os.ReadFile(profile.Name())
 	if err != nil || len(data) == 0 {
 		//yawntest:ignore needs a go tool that writes no profile at all
-		return nil, fmt.Errorf("tests don't run: %s", goOutputLine(string(output), runErr))
+		return nil, testsFailed(string(output), runErr)
 	}
 	blocks, err := parseProfile(data)
 	if err != nil {
 		return nil, err
 	}
 	if runErr != nil && len(blocks) == 0 {
-		return nil, fmt.Errorf("tests don't build: %s", goOutputLine(string(output), runErr))
+		return nil, testsFailed(string(output), runErr)
 	}
 	return blocks, nil
+}
+
+// testsFailed says why a run left no coverage: the tests didn't compile, or one of them
+// crashed the test binary, which takes the profile with it.
+func testsFailed(output string, runErr error) error {
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "panic: ") {
+			where := ""
+			for _, earlier := range lines[:i] {
+				if test, ok := strings.CutPrefix(strings.TrimSpace(earlier), "--- FAIL: "); ok {
+					where = " in " + strings.Fields(test)[0]
+				}
+			}
+			return fmt.Errorf("tests crash%s: %s", where, strings.TrimPrefix(line, "panic: "))
+		}
+	}
+	return fmt.Errorf("tests don't build: %s", goOutputLine(output, runErr))
 }
 
 // goOutputLine is the first line of go's output that says something, or the error itself.
