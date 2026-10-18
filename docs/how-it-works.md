@@ -24,6 +24,7 @@ doesn't parse or a package whose tests don't build becomes a warning, and the re
 | `internal/scan` | Walk a tree, parse each directory as a package, drop what's already tested, list dirs | `scan.go`, `constraint.go` |
 | `internal/gen` | Turn matches into a gofmt'ed test file | `gen.go`, one file per pattern, `seeds.go` for edge values |
 | `internal/run` | Run `go test` and turn its output into findings and error paths. Coverage runs are cached and run in parallel | `tests.go`, `coverage.go` |
+| `internal/load` | `go list -export` and `go/types`: type information for the scanned packages | `load.go` |
 | `internal/config` | `.yawntest.json`: finding it, `exclude` globs with `**`, `disable` | `config.go` |
 | `internal/changes` | Lines changed since `HEAD` or a merge base, and filters for scan results | `changes.go` |
 | `internal/report` | Text, JSON and GitHub output, the exit-code decision | `text.go` (sections and layout), one file per section, `summary.go`, `result.go`, `json.go`, `github.go` |
@@ -67,15 +68,16 @@ Dashed arrows are imports. The diagrams are PlantUML; sources and the render com
 
 ## Detection
 
-All detection works on the AST alone. Imports are resolved through the file's import table,
-so `nethttp.Request` with `import nethttp "net/http"` is still recognized. Functions are tried
+Detection works on the AST, with type information where it's available (see
+[Types](#types)). Imports are resolved through the file's import table, so `nethttp.Request`
+with `import nethttp "net/http"` is still recognized. Functions are tried
 in the order http-handler → validation → pure-func, and the first hit wins. roundtrip and
 enum-roundtrip are checked on top, since they test a property of two declarations.
 
 **Purity** is decided once per func and cached: a body is impure if it starts a goroutine,
 touches an I/O package, or calls a func of the same package (or a method on its own receiver)
 that is impure. Recursion counts as pure while it's being decided. Calls into other packages of
-the module aren't followed.
+the module are followed with type information (see [Types](#types)), not with `--static`.
 
 Functions without a body and methods on generic types (`Box[T]`) are skipped, since a test
 can't call them.
@@ -146,6 +148,31 @@ can't call them.
 
 Names are split into words first (`unitPrice` → `unit`, `price`; `HTTPServer` → `http`,
 `server`), so `feedback` never matches `fee`.
+
+## Types
+
+Unless `--static` is set, `internal/load` runs
+`go list -e -deps -export -json=… <pattern>` in the module around the checked path and in
+every module nested below it. go builds the export data of every dependency (and caches it),
+and `go/types` then checks the scanned files of each directory against that data, through a
+`gc` importer whose `lookup` opens the listed export files. That's what
+`golang.org/x/tools/go/packages` does, without the dependency.
+
+With types, a call is judged by the object it resolves to:
+
+- A func or method of a scanned package, or of another package of the module (parsed on
+  first use, so checking `./api/...` still sees into `./db`): its purity, followed
+  transitively.
+- The standard library: the same lists as without types, but per object, so the method
+  `time.Time.After` is a comparison while the func `time.After` is a timer, and
+  `(*exec.Cmd).Run` is I/O while `(*json.Decoder).Decode` only depends on its input.
+- An interface method: I/O if the interface comes from an I/O package (`io.Writer`) or from
+  your module (a `Repository`), since some implementation decides.
+- A dependency outside the module: unknown, treated as without types.
+
+Files outside the current build (`open_windows.go` on Linux), packages that don't build and
+nodes the checker couldn't resolve fall back to the syntax rules, so a broken package never
+stops the run.
 
 ## Hints
 
@@ -293,7 +320,6 @@ Marked in the code with `ponytail:` comments, each naming its upgrade path:
 
 | Where | Limit | Upgrade |
 |---|---|---|
-| `detect/package.go` | I/O behind a call into another package of the module isn't seen | go/types plus a call graph |
 | `detect/imports.go` | Assumes the package name equals the last path element (except `/vN`) | go/packages |
 | `detect/dates.go` | Only direct `time.Now().Year()` chains, not `now := time.Now(); now.Year()` | Track the variable |
 | `gen/fuzz.go` | Slices are fuzzed with one element | Table tests for nil, empty, large |
