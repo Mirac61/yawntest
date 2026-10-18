@@ -132,3 +132,59 @@ func TestLookupKeepsSyntaxOnlyPackage(t *testing.T) {
 		t.Errorf("loaded %d times, want once", loads)
 	}
 }
+
+// With type information, a write is judged by what the name resolves to: a package var of
+// this or another package, or a local that happens to share its name.
+func TestTypedPackageState(t *testing.T) {
+	src := `package p
+
+import "flag"
+
+var hits int
+
+func Hit(n int) int {
+	hits += n
+	return hits
+}
+
+func SetFlags(name string) bool {
+	flag.CommandLine = flag.NewFlagSet(name, flag.ContinueOnError)
+	return true
+}
+
+func Inner(n int) int {
+	if n > 0 {
+		hits := n
+		hits++
+		return hits
+	}
+	return 0
+}
+`
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "p.go", src, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	info := &types.Info{
+		Uses:       map[*ast.Ident]types.Object{},
+		Defs:       map[*ast.Ident]types.Object{},
+		Selections: map[*ast.SelectorExpr]*types.Selection{},
+		Types:      map[ast.Expr]types.TypeAndValue{},
+	}
+	config := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
+	if _, err := config.Check("example.com/p", fset, []*ast.File{file}, info); err != nil {
+		t.Fatalf("type-check: %v", err)
+	}
+
+	pkg := NewPackage([]*ast.File{file})
+	pkg.SetTypes("example.com/p", info, NewProgram(nil))
+
+	var candidates []string
+	for _, match := range pkg.File(fset, file) {
+		candidates = append(candidates, match.Name)
+	}
+	if want := []string{"Inner"}; !slices.Equal(candidates, want) {
+		t.Errorf("candidates = %v, want %v", candidates, want)
+	}
+}

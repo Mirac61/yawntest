@@ -34,9 +34,55 @@ func Roll(n int) int { return rand.IntN(n) }
 
 func Age(born time.Time) int { return time.Now().Year() - born.Year() }
 
+// Writing package state: calling twice isn't the same as calling once, and a fuzz test
+// calling it would change what the package's other tests see.
+
+var (
+	nodeID   [6]byte
+	calls    int
+	lastName string
+	cache    = map[string]int{}
+)
+
+func SetNode(id []byte) bool {
+	if len(id) < 6 {
+		return false
+	}
+	copy(nodeID[:], id)
+	return true
+}
+
+func Counted(n int) int {
+	calls++
+	return n
+}
+
+func Remember(s string) string {
+	lastName = s
+	return s
+}
+
+func Memo(s string) int {
+	cache[s] = len(s)
+	return cache[s]
+}
+
 func Shout(s string) string {
 	fmt.Println(s)
 	return s
+}
+
+// Locals and params with the names of package vars are no package state.
+
+func ShadowParam(calls int) int {
+	calls *= 2
+	return calls
+}
+
+func ShadowLocal(s string) string {
+	lastName := s
+	lastName += "!"
+	return lastName
 }
 
 func Count(m map[string]int) int { return len(m) }
