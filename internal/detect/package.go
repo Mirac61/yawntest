@@ -14,7 +14,10 @@ type Package struct {
 	funcs  map[string][]*funcInfo // "Name" or "Type.Name"; several for build-constrained variants
 	consts map[string][]string    // type name → typed consts, in source order
 	basics map[string]string      // type name → basic type, for `type Slug string`
-	files  []*ast.File
+
+	uncomparableTypes map[string]bool   // type name → defined as a func, chan or interface
+	namedAs           map[string]string // type Middleware Handler: Middleware → Handler
+	files             []*ast.File
 
 	// With type information (SetTypes), calls are resolved to what they really call, in this
 	// package, another package of the program, or the standard library. Without it, or for a
@@ -74,7 +77,10 @@ type funcInfo struct {
 // NewPackage indexes the non-test files of one directory, generated files included: their
 // funcs don't become candidates, but a generated helper doing I/O still makes its callers impure.
 func NewPackage(files []*ast.File) *Package {
-	pkg := &Package{funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, basics: map[string]string{}, files: files}
+	pkg := &Package{
+		funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, basics: map[string]string{},
+		uncomparableTypes: map[string]bool{}, namedAs: map[string]string{}, files: files,
+	}
 	for _, file := range files {
 		imports := newImportTable(file)
 		for _, decl := range file.Decls {
@@ -127,10 +133,67 @@ func (p *Package) addBasics(decl *ast.GenDecl) {
 	}
 	for _, spec := range decl.Specs {
 		typeSpec := spec.(*ast.TypeSpec)
-		ident, ok := typeSpec.Type.(*ast.Ident)
-		if ok && typeSpec.TypeParams == nil && basicTypes[ident.Name] {
-			p.basics[typeSpec.Name.Name] = ident.Name
+		switch typ := typeSpec.Type.(type) {
+		case *ast.Ident:
+			if typeSpec.TypeParams == nil && basicTypes[typ.Name] {
+				p.basics[typeSpec.Name.Name] = typ.Name
+			}
+			p.namedAs[typeSpec.Name.Name] = typ.Name
+		case *ast.FuncType, *ast.ChanType, *ast.InterfaceType:
+			p.uncomparableTypes[typeSpec.Name.Name] = true
 		}
+	}
+}
+
+// uncomparableNamed follows type Middleware Handler to Handler, whatever order they're declared in.
+func (p *Package) uncomparableNamed(name string) bool {
+	for seen := map[string]bool{}; !seen[name]; name = p.namedAs[name] {
+		if p.uncomparableTypes[name] {
+			return true
+		}
+		seen[name] = true
+	}
+	return false
+}
+
+// uncomparableResult reports a result of func, chan or non-error interface type. With type
+// information that's exact; without, it sees literal types and the package's own named ones.
+func (p *Package) uncomparableResult(fn *ast.FuncDecl, imports importTable) bool {
+	for _, expr := range fieldTypes(fn.Type.Results) {
+		if p.info != nil {
+			if typed, ok := p.info.Types[expr]; ok && typed.Type != nil {
+				if uncomparable(typed.Type) {
+					return true
+				}
+				continue
+			}
+		}
+		switch expr := expr.(type) {
+		case *ast.FuncType, *ast.ChanType:
+			return true
+		case *ast.InterfaceType:
+			return true
+		case *ast.Ident:
+			if p.uncomparableNamed(expr.Name) {
+				return true
+			}
+		case *ast.SelectorExpr:
+			if imports.isMember(expr, "net/http", "Handler") || imports.isMember(expr, "net/http", "HandlerFunc") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func uncomparable(typ types.Type) bool {
+	switch typ.Underlying().(type) {
+	case *types.Signature, *types.Chan:
+		return true
+	case *types.Interface:
+		return !types.Identical(typ, types.Universe.Lookup("error").Type())
+	default:
+		return false
 	}
 }
 

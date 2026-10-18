@@ -36,7 +36,7 @@ var enumSentinelWords = map[string]bool{
 // funcPairs returns the matches that need a second declaration of the package: the decode half
 // of a roundtrip, or the String method and consts of an enum.
 func (p *Package) funcPairs(fset *token.FileSet, fn *ast.FuncDecl, e env) []Match {
-	if !isPlainExported(fn) || fn.Body == nil {
+	if !isPlainExported(fn) || fn.Body == nil || panicsByDesign(fn) {
 		return nil
 	}
 	var matches []Match

@@ -1,5 +1,4 @@
 tidwall/gjson at 690362d6edf4
 
 check: 0 candidates, 0 hints, 0 error paths, 0 packages without tests
-run --all: 12 tests in 1 files, 0 skipped, 1 findings, 0 need setup
-  finding gjson.go:991 isDotPiperChar TestYawntest_isDotPiperChar/empty: panic: runtime error: index out of range [0] with length 0
+run --all: 10 tests in 1 files, 0 skipped, 0 findings, 0 need setup
