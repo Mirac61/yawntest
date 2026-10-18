@@ -20,6 +20,6 @@ body:
     attributes:
       label: Version
       description: Output of `yawntest --version` and `go version`.
-      placeholder: yawntest v0.3.0, go1.23.4 linux/amd64
+      placeholder: yawntest v0.4.0, go1.23.4 linux/amd64
     validations:
       required: true
