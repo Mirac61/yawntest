@@ -39,11 +39,18 @@ type Tree struct {
 
 type identSet map[string]bool
 
-func Scan(root string) (Tree, error) {
+// Scan parses root; exclude, if set, leaves out files and whole dirs it returns true for.
+func Scan(root string, exclude func(path string) bool) (Tree, error) {
 	var paths []string
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if exclude != nil && path != root && exclude(path) {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if entry.IsDir() {
 			if path != root && skipDir(entry.Name()) {

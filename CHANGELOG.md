@@ -7,6 +7,8 @@ CLI and its output. Each entry says what to adjust.
 
 ### New
 
+- **`.yawntest.json`** to exclude paths (`**` globs) and disable patterns, hints or error
+  paths for a whole repo. `--config <file>` points at another one.
 - **`--format sarif`** and **`--sarif <file>`** for GitHub code scanning and other SARIF
   readers. The action uploads it with `sarif: true`.
 
