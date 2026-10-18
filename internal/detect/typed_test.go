@@ -53,6 +53,14 @@ func Decode(s string) (int, error) {
 
 type Store interface{ Load() error }
 
+// Counter returns a closure, whatever name its type has: no determinism check.
+type Next = func() int
+
+func Counter(n int) Next { return func() int { return n } }
+
+// Wrap returns error, an interface that compares fine.
+func Wrap(s string) error { return nil }
+
 // Use's error comes from whatever Store is: a fake would be needed.
 func Use(st Store) error {
 	if err := st.Load(); err != nil {
@@ -84,7 +92,7 @@ func Use(st Store) error {
 	for _, match := range pkg.File(fset, file) {
 		candidates = append(candidates, match.Name)
 	}
-	if want := []string{"Later", "Decode"}; !slices.Equal(candidates, want) {
+	if want := []string{"Later", "Decode", "Wrap"}; !slices.Equal(candidates, want) {
 		t.Errorf("candidates = %v, want %v", candidates, want)
 	}
 

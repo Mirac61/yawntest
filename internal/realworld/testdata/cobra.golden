@@ -3,10 +3,5 @@ spf13/cobra at adbc8813901b
 check: 11 candidates (validation 11), 2 hints (dates 2), 3 error paths, 0 packages without tests
   hint doc/md_docs.go:113 dates: time.Now().Format() depends on the server's time zone; call .UTC() or .In(loc) first
   hint doc/rest_docs.go:126 dates: time.Now().Format() depends on the server's time zone; call .UTC() or .In(loc) first
-run --all: 17 tests in 5 files, 3 skipped, 5 findings, 0 need setup
-  finding args.go:87 MinimumNArgs FuzzYawntest_MinimumNArgs/seed#0: MinimumNArgs(0) is not deterministic: got 0x6a2280, then 0x6a21a0
-  finding args.go:97 MaximumNArgs FuzzYawntest_MaximumNArgs/seed#0: MaximumNArgs(0) is not deterministic: got 0x6a1de0, then 0x6a1d00
-  finding args.go:107 ExactArgs FuzzYawntest_ExactArgs/seed#0: ExactArgs(0) is not deterministic: got 0x6a1940, then 0x6a1860
-  finding args.go:117 RangeArgs FuzzYawntest_RangeArgs/seed#0: RangeArgs(0, 0) is not deterministic: got 0x6a1480, then 0x6a1380
-  finding args.go:142 ExactValidArgs FuzzYawntest_ExactValidArgs/seed#0: ExactValidArgs(0) is not deterministic: got 0x6a0ec0, then 0x6a0d20
+run --all: 12 tests in 4 files, 3 skipped, 0 findings, 0 need setup
   warning: .: error paths skipped, tests don't build: [Debug] [Error] Error while parsing flags from args [--localroot value]: unknown flag: --localroot
