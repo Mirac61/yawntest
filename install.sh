@@ -2,10 +2,10 @@
 # Installs the yawntest binary from a GitHub release, checked against the release's checksums.
 #
 #   curl -sSfLO https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh && sh install.sh
-#   curl -sSfLO https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh && sh install.sh -b /usr/local/bin v0.3.0
+#   curl -sSfLO https://raw.githubusercontent.com/Mirac61/yawntest/main/install.sh && sh install.sh -b /usr/local/bin v0.4.0
 #
 # -b DIR   where to put the binary (default: $BINDIR, or ~/.local/bin)
-# VERSION  a release tag like v0.3.0 (default: the latest release)
+# VERSION  a release tag like v0.4.0 (default: the latest release)
 #
 # With Go installed, `go install github.com/Mirac61/yawntest/cmd/yawntest@latest` does the same.
 set -eu
