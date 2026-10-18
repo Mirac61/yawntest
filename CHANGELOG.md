@@ -3,7 +3,7 @@
 yawntest follows [SemVer](https://semver.org) and is pre-1.0, so a minor version can change the
 CLI and its output. Each entry says what to adjust.
 
-## Unreleased
+## v0.5.0
 
 ### Fixed
 
@@ -11,6 +11,9 @@ CLI and its output. Each entry says what to adjust.
   copies into a package var; its generated fuzz test changed the node ID for every other
   test of the package. Such funcs are no candidates for pure-func, validation or roundtrip
   anymore, so `check` may list fewer candidates than before.
+- A release created by hand on GitHub got no binaries: the release workflow failed because the
+  release already existed. It uploads to an existing release now, and can be rerun for a tag
+  from the Actions tab.
 
 ## v0.4.0
 

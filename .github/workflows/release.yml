@@ -3,9 +3,17 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and upload, like v0.5.0
+        required: true
 
 permissions:
   contents: write
+
+env:
+  VERSION: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   release:
@@ -14,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -24,12 +34,15 @@ jobs:
         run: go test ./...
 
       - name: Build
-        env:
-          VERSION: ${{ github.ref_name }}
         run: .github/scripts/build-release.sh "$VERSION"
 
+      # A release made by hand on GitHub already exists when the tag push gets here.
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ github.ref_name }}
-        run: gh release create "$VERSION" dist/* --title "$VERSION" --generate-notes --verify-tag
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" dist/* --clobber
+          else
+            gh release create "$VERSION" dist/* --title "$VERSION" --generate-notes --verify-tag
+          fi
