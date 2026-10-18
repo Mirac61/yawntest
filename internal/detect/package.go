@@ -15,7 +15,8 @@ type Package struct {
 	consts map[string][]string    // type name → typed consts, in source order
 	basics map[string]string      // type name → basic type, for `type Slug string`
 
-	uncomparableTypes map[string]bool // type name → defined as a func, chan or interface
+	uncomparableTypes map[string]bool   // type name → defined as a func, chan or interface
+	namedAs           map[string]string // type Middleware Handler: Middleware → Handler
 	files             []*ast.File
 
 	// With type information (SetTypes), calls are resolved to what they really call, in this
@@ -78,7 +79,7 @@ type funcInfo struct {
 func NewPackage(files []*ast.File) *Package {
 	pkg := &Package{
 		funcs: map[string][]*funcInfo{}, consts: map[string][]string{}, basics: map[string]string{},
-		uncomparableTypes: map[string]bool{}, files: files,
+		uncomparableTypes: map[string]bool{}, namedAs: map[string]string{}, files: files,
 	}
 	for _, file := range files {
 		imports := newImportTable(file)
@@ -137,10 +138,22 @@ func (p *Package) addBasics(decl *ast.GenDecl) {
 			if typeSpec.TypeParams == nil && basicTypes[typ.Name] {
 				p.basics[typeSpec.Name.Name] = typ.Name
 			}
+			p.namedAs[typeSpec.Name.Name] = typ.Name
 		case *ast.FuncType, *ast.ChanType, *ast.InterfaceType:
 			p.uncomparableTypes[typeSpec.Name.Name] = true
 		}
 	}
+}
+
+// uncomparableNamed follows type Middleware Handler to Handler, whatever order they're declared in.
+func (p *Package) uncomparableNamed(name string) bool {
+	for seen := map[string]bool{}; !seen[name]; name = p.namedAs[name] {
+		if p.uncomparableTypes[name] {
+			return true
+		}
+		seen[name] = true
+	}
+	return false
 }
 
 // uncomparableResult reports a result of func, chan or non-error interface type. With type
@@ -161,7 +174,7 @@ func (p *Package) uncomparableResult(fn *ast.FuncDecl, imports importTable) bool
 		case *ast.InterfaceType:
 			return true
 		case *ast.Ident:
-			if p.uncomparableTypes[expr.Name] {
+			if p.uncomparableNamed(expr.Name) {
 				return true
 			}
 		case *ast.SelectorExpr:
