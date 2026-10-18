@@ -112,3 +112,23 @@ func TestIsStandard(t *testing.T) {
 		}
 	}
 }
+
+// A package that doesn't type-check is loaded syntax only. Every lookup must get that same
+// package, or callers visited after the first would see none and judge its funcs pure.
+func TestLookupKeepsSyntaxOnlyPackage(t *testing.T) {
+	loads := 0
+	program := NewProgram(func(path string) *Package {
+		loads++
+		return NewPackage(nil) // no SetTypes: the type check failed
+	})
+	first := program.lookup("example.com/broken")
+	if first == nil {
+		t.Fatal("first lookup returned nil")
+	}
+	if again := program.lookup("example.com/broken"); again != first {
+		t.Errorf("second lookup = %p, want the first package %p", again, first)
+	}
+	if loads != 1 {
+		t.Errorf("loaded %d times, want once", loads)
+	}
+}
