@@ -3,7 +3,7 @@
 yawntest follows [SemVer](https://semver.org) and is pre-1.0, so a minor version can change the
 CLI and its output. Each entry says what to adjust.
 
-## Unreleased
+## v0.4.0
 
 ### New
 
