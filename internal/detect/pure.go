@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 var ioPackages = map[string]bool{
@@ -78,8 +79,10 @@ func panicsByDesign(fn *ast.FuncDecl) bool {
 		return false
 	}
 	doc := strings.ToLower(fn.Doc.Text())
+	// Whole words: "debug" is no bug marker.
+	words := strings.FieldsFunc(doc, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 	return strings.Contains(doc, "panic") && !slices.ContainsFunc(bugMarkers, func(marker string) bool {
-		return strings.Contains(doc, marker)
+		return slices.Contains(words, marker)
 	})
 }
 

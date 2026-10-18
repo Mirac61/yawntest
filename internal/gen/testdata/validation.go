@@ -52,3 +52,6 @@ func checkNode(n *node) bool { return n.parent == nil }
 // isOperator is unexported, so its callers already checked there's a byte to look at: no
 // empty case and no "empty is rejected" test (tidwall/gjson, labstack/echo).
 func isOperator(s string) bool { return s[0] == '+' || s[0] == '-' }
+
+// checkTags is unexported: its callers pass at least one tag, so no nil or empty case.
+func checkTags(tags []string) bool { return tags[0] != "" }
