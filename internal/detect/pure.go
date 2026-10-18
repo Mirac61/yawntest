@@ -38,12 +38,12 @@ func detectPureFunc(fn *ast.FuncDecl, e env) (string, bool) {
 		return "", false
 	}
 
-	params := fields(fn.Type.Params, e.imports)
+	params := e.pkg.withUnderlying(fields(fn.Type.Params, e.imports))
 	if len(params) == 0 {
 		return "", false
 	}
 	for _, param := range params {
-		if param.Type == "" {
+		if param.Basic() == "" {
 			return "", false
 		}
 	}

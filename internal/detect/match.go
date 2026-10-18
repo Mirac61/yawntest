@@ -14,9 +14,18 @@ const (
 )
 
 type Field struct {
-	Name string
-	Type string // basic type, "time.Time", "[]T" or "...T"; empty if gen can't build a value
-	Expr string // the type as written in the source, e.g. "*User" or "error"
+	Name       string
+	Type       string // basic type, "time.Time", "[]T" or "...T"; empty if gen can't build a value
+	Expr       string // the type as written in the source, e.g. "*User" or "error"
+	Underlying string // for a type of the package like `type Slug string`: "string"
+}
+
+// Basic is the basic type gen builds values of: Type, or else Underlying, converted to Expr.
+func (f Field) Basic() string {
+	if f.Type != "" {
+		return f.Type
+	}
+	return f.Underlying
 }
 
 type Match struct {

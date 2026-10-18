@@ -7,6 +7,9 @@ CLI and its output. Each entry says what to adjust.
 
 ### New
 
+- **Types like `type Slug string`** are fuzzed now, as their basic type converted for the
+  call: in pure funcs, validators, roundtrips and JSON fields. Writing the test fixture for
+  this, the generated fuzz test found an overflow in it (`Level(l+1)` at 255).
 - **`run --fuzztime 10s`** fuzzes every generated fuzz test with Go's fuzzing engine after
   the seeds; failing inputs are saved by go as regression tests.
 - **`.yawntest.json`** to exclude paths (`**` globs) and disable patterns, hints or error
