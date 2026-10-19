@@ -3,6 +3,13 @@
 yawntest follows [SemVer](https://semver.org) and is pre-1.0, so a minor version can change the
 CLI and its output. Each entry says what to adjust.
 
+## Unreleased
+
+### Fixed
+
+- A package without type information is reported with go's error. With a cold module cache
+  the warning showed a `go: downloading …` line instead.
+
 ## v0.5.0
 
 ### Fixed

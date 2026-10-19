@@ -34,6 +34,9 @@ go test -tags realworld ./internal/realworld -update    # rewrite the summaries
 | google/uuid | 0 | 0 | 9 | 6 | 1 | 0 |
 | go-playground/validator | 0 | 0 | 3 | 1 | 1 | 0 |
 
+This table is the first run, made as root. The weekly run isn't root, and there cobra has
+1 candidate and 8 untested error paths (see the warnings below); the summaries in
+[`internal/realworld/testdata`](../internal/realworld/testdata) are the current numbers.
 Findings count failed test funcs, not cases. Every run took seconds, except decimal: one
 generated test hangs there. The generated tests get 2 minutes; before that limit, only go's
 10-minute test timeout ended it, and the run said "go test failed" without naming the test.
@@ -82,6 +85,9 @@ Warnings, not findings:
 - cobra's own tests fail when run as root (`TestFailGenFishCompletionFile` expects a write to
   fail), so its error paths are skipped. The warning names the test and its panic: `tests
   crash in TestFailGenFishCompletionFile: … nil pointer dereference`.
+  That run was made as root. The weekly workflow runs as a normal user: cobra's tests pass
+  there, coverage is known, and what's left is 1 candidate and 8 untested error paths. The
+  golden in `internal/realworld/testdata/cobra.golden` is that run.
 - cli's `docs` is a nested module whose `go.mod` needs updating, so it's checked without type
   information.
 

@@ -232,3 +232,16 @@ func TestNewWithBrokenModule(t *testing.T) {
 		t.Error("Check of an unlisted dir = ok")
 	}
 }
+
+func TestFirstLine(t *testing.T) {
+	for _, test := range []struct{ stderr, want string }{
+		{"go: updates to go.mod needed; to update it:\n\tgo mod tidy\n", "go: updates to go.mod needed; to update it:"},
+		{"go: downloading example.com/a v1.0.0\ngo: downloading example.com/b v1.2.0\ngo: updates to go.mod needed\n", "go: updates to go.mod needed"},
+		{"go: downloading example.com/a v1.0.0\n", ""},
+		{"", ""},
+	} {
+		if got := firstLine(test.stderr); got != test.want {
+			t.Errorf("firstLine(%q) = %q, want %q", test.stderr, got, test.want)
+		}
+	}
+}

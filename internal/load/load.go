@@ -220,7 +220,12 @@ func (m mappedImporter) Import(path string) (*types.Package, error) {
 	return l.importer.Import(path)
 }
 
+// firstLine skips go's download progress, which comes first when the module cache is cold.
 func firstLine(s string) string {
-	line, _, _ := strings.Cut(strings.TrimSpace(s), "\n")
-	return line
+	for _, line := range strings.Split(strings.TrimSpace(s), "\n") {
+		if !strings.HasPrefix(line, "go: downloading ") {
+			return line
+		}
+	}
+	return ""
 }
