@@ -34,6 +34,9 @@ go test -tags realworld ./internal/realworld -update    # rewrite the summaries
 | google/uuid | 0 | 0 | 9 | 6 | 1 | 0 |
 | go-playground/validator | 0 | 0 | 3 | 1 | 1 | 0 |
 
+This table is the first run, made as root. The weekly run isn't root, and there cobra has
+1 candidate and 8 untested error paths (see the warnings below); the summaries in
+[`internal/realworld/testdata`](../internal/realworld/testdata) are the current numbers.
 Findings count failed test funcs, not cases. Every run took seconds, except decimal: one
 generated test hangs there. The generated tests get 2 minutes; before that limit, only go's
 10-minute test timeout ended it, and the run said "go test failed" without naming the test.
