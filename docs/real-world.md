@@ -82,6 +82,9 @@ Warnings, not findings:
 - cobra's own tests fail when run as root (`TestFailGenFishCompletionFile` expects a write to
   fail), so its error paths are skipped. The warning names the test and its panic: `tests
   crash in TestFailGenFishCompletionFile: … nil pointer dereference`.
+  That run was made as root. The weekly workflow runs as a normal user: cobra's tests pass
+  there, coverage is known, and what's left is 1 candidate and 8 untested error paths. The
+  golden in `internal/realworld/testdata/cobra.golden` is that run.
 - cli's `docs` is a nested module whose `go.mod` needs updating, so it's checked without type
   information.
 
