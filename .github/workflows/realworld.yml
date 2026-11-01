@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: stable
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/yawntest-corpus
           key: realworld-corpus-${{ hashFiles('internal/realworld/realworld_test.go') }}
